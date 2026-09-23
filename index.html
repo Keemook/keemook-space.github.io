@@ -1,532 +1,1653 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>เกมกระดานอวกาศ - Space Board Game</title>
-  <style>
-    /* --- 1. สไตล์พื้นฐานและธีมอวกาศ --- */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Kanit', 'Prompt', sans-serif;
-    }
-
-    body {
-      background-color: #0b0e14;
-      background-image: 
-        radial-gradient(circle at 50% 50%, rgba(20, 30, 48, 0.6) 0%, rgba(11, 14, 20, 1) 100%),
-        radial-gradient(2px 2px at 40px 60px, #fff, rgba(0,0,0,0)),
-        radial-gradient(2px 2px at 150px 150px, rgba(255,255,255,0.8), rgba(0,0,0,0)),
-        radial-gradient(2px 2px at 300px 80px, rgba(255,255,255,0.6), rgba(0,0,0,0));
-      color: #ffffff;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-
-    /* --- 2. หน้าแรก (SETUP SCREEN) --- */
-    #setup-screen {
-      background: rgba(22, 27, 34, 0.9);
-      border: 2px solid #30363d;
-      border-radius: 24px;
-      padding: 35px;
-      width: 100%;
-      max-width: 650px;
-      box-shadow: 0 0 40px rgba(0, 242, 254, 0.15);
-      backdrop-filter: blur(10px);
-      text-align: center;
-    }
-
-    .setup-title {
-      font-size: 2rem;
-      font-weight: 800;
-      margin-bottom: 8px;
-      background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
-    }
-
-    .setup-subtitle {
-      color: #8b949e;
-      font-size: 0.95rem;
-      margin-bottom: 25px;
-    }
-
-    .players-inputs {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      margin-bottom: 25px;
-    }
-
-    .player-input-card {
-      background: #161b22;
-      border: 2px solid #30363d;
-      border-radius: 16px;
-      padding: 15px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 15px;
-      transition: border-color 0.3s;
-    }
-
-    .player-number-tag {
-      font-weight: bold;
-      font-size: 0.9rem;
-      padding: 4px 10px;
-      border-radius: 8px;
-      white-space: nowrap;
-    }
-
-    .name-input {
-      flex-grow: 1;
-      background: #0d1117;
-      border: 1px solid #30363d;
-      border-radius: 10px;
-      padding: 10px 14px;
-      color: #fff;
-      font-size: 0.95rem;
-      outline: none;
-    }
-
-    .name-input:focus {
-      border-color: #00f2fe;
-    }
-
-    .avatar-picker {
-      display: flex;
-      gap: 8px;
-    }
-
-    .avatar-opt {
-      font-size: 1.5rem;
-      width: 42px;
-      height: 42px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 10px;
-      background: #0d1117;
-      border: 1px solid #30363d;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .avatar-opt:hover {
-      transform: scale(1.1);
-    }
-
-    .avatar-opt.selected {
-      border-color: #00f2fe;
-      background: rgba(0, 242, 254, 0.2);
-      box-shadow: 0 0 10px rgba(0, 242, 254, 0.4);
-    }
-
-    .setup-actions {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 15px;
-    }
-
-    .btn {
-      border: none;
-      padding: 12px 24px;
-      border-radius: 30px;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .btn-add {
-      background: #21262d;
-      color: #58a6ff;
-      border: 1px solid #30363d;
-    }
-
-    .btn-add:hover {
-      background: #30363d;
-      color: #fff;
-    }
-
-    .btn-start {
-      background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
-      color: #000;
-      box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
-      flex-grow: 1;
-    }
-
-    .btn-start:hover {
-      transform: scale(1.03);
-      box-shadow: 0 0 25px rgba(0, 242, 254, 0.7);
-    }
-
-    /* --- 3. หน้ากระดานเกม (GAME SCREEN) --- */
-    #game-screen {
-      display: none; /* ซ่อนไว้ก่อน */
-      align-items: center;
-      justify-content: center;
-      gap: 25px;
-      max-width: 1250px;
-      width: 100%;
-    }
-
-    .player-sidebar {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      width: 200px;
-      flex-shrink: 0;
-    }
-
-    .player-card {
-      background: rgba(22, 27, 34, 0.85);
-      border: 2px solid #30363d;
-      border-radius: 16px;
-      padding: 16px 12px;
-      text-align: center;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(8px);
-    }
-
-    .player-card.active-turn {
-      box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
-      transform: translateY(-3px);
-    }
-
-    .player-avatar {
-      font-size: 2.5rem;
-      margin-bottom: 6px;
-    }
-
-    .player-name {
-      display: block;
-      font-size: 0.95rem;
-      color: #8b949e;
-      font-weight: 600;
-    }
-
-    .player-money {
-      display: block;
-      font-size: 1.3rem;
-      font-weight: 800;
-      color: #ffcc00;
-      margin-top: 4px;
-    }
-
-    /* กระดานเกมหลัก */
-    .board-container {
-      background: rgba(15, 20, 28, 0.95);
-      border: 2px solid #2d3748;
-      border-radius: 20px;
-      padding: 15px;
-      box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
-      display: grid;
-      grid-template-columns: repeat(5, 110px);
-      grid-template-rows: repeat(5, 110px);
-      gap: 8px;
-    }
-
-    .board-center {
-      grid-column: 2 / 5;
-      grid-row: 2 / 5;
-      background: #0d1117;
-      border-radius: 12px;
-      border: 1px solid #21262d;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      padding: 15px;
-      text-align: center;
-    }
-
-    .turn-indicator {
-      background: linear-gradient(90deg, #ff4b5c, #ff758c);
-      padding: 6px 16px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: bold;
-    }
-
-    .dice-area {
-      display: flex;
-      gap: 10px;
-    }
-
-    .dice {
-      width: 42px;
-      height: 42px;
-      background: #fff;
-      color: #000;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.4rem;
-      font-weight: bold;
-    }
-
-    .roll-btn {
-      background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
-      color: #000;
-      border: none;
-      padding: 8px 20px;
-      font-size: 0.95rem;
-      font-weight: bold;
-      border-radius: 25px;
-      cursor: pointer;
-    }
-
-    /* ช่องกระดาน */
-    .tile {
-      background: #161b22;
-      border: 2px solid #30363d;
-      border-radius: 12px;
-      padding: 6px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      position: relative;
-    }
-
-    .tile.owner-p1 { border-color: #ff4b5c; }
-    .tile.owner-p2 { border-color: #00d2ff; }
-
-    .tile-icon {
-      font-size: 2rem;
-    }
-
-    .tile-name {
-      font-size: 0.8rem;
-      font-weight: bold;
-      color: #e6edf3;
-      text-align: center;
-    }
-
-    .tile-price {
-      font-size: 0.75rem;
-      color: #ffcc00;
-      font-weight: bold;
-    }
-
-    /* ดาว 3D */
-    .star-container {
-      display: flex;
-      gap: 1px;
-      min-height: 16px;
-    }
-
-    .star-3d {
-      font-size: 0.8rem;
-      background: linear-gradient(180deg, #ffe600 0%, #ff8800 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0px 2px 0px #804400);
-    }
-  </style>
-</head>
-<body>
-
-  <!-- ================= หน้าที่ 1: ตั้งค่าและเพิ่มผู้เล่น ================= -->
-  <div id="setup-screen">
-    <h1 class="setup-title">🚀 SPACE MONOPOLY</h1>
-    <p class="setup-subtitle">กำหนดผู้เล่นและเลือกไอคอนประจำตัว (2 - 4 คน)</p>
-
-    <div class="players-inputs" id="players-container">
-      <!-- ผู้เล่นจะถูกสร้างขึ้นด้วย JavaScript ที่นี่ -->
-    </div>
-
-    <div class="setup-actions">
-      <button class="btn btn-add" id="add-player-btn" onclick="addPlayer()">+ เพิ่มผู้เล่น</button>
-      <button class="btn btn-start" onclick="startGame()">เริ่มเกม 🎲</button>
-    </div>
-  </div>
-
-  <!-- ================= หน้าที่ 2: กระดานเกม ================= -->
-  <div id="game-screen">
-    <!-- แผงผู้เล่นฝั่งซ้าย (P1, P3) -->
-    <div class="player-sidebar" id="sidebar-left"></div>
-
-    <!-- กระดานเกม -->
-    <div class="board-container">
-      <div class="tile"><span class="tile-name">จุดเริ่มต้น</span><span class="tile-icon">🚩</span><span class="tile-price">+20K</span></div>
-      <div class="tile owner-p1">
-        <span class="tile-name">ดาวพุธ</span><span class="tile-icon">🪐</span><span class="tile-price">50K</span>
-        <div class="star-container"><span class="star-3d">★</span></div>
-      </div>
-      <div class="tile owner-p2">
-        <span class="tile-name">ดาวศุกร์</span><span class="tile-icon">🌕</span><span class="tile-price">60K</span>
-        <div class="star-container"><span class="star-3d">★</span><span class="star-3d">★</span></div>
-      </div>
-      <div class="tile"><span class="tile-name">โลก</span><span class="tile-icon">🌎</span><span class="tile-price">80K</span><div class="star-container"></div></div>
-      <div class="tile owner-p1">
-        <span class="tile-name">ดวงจันทร์</span><span class="tile-icon">🌙</span><span class="tile-price">90K</span>
-        <div class="star-container"><span class="star-3d">★</span><span class="star-3d">★</span><span class="star-3d">★</span></div>
-      </div>
-
-      <div class="tile"><span class="tile-name">ดาวอังคาร</span><span class="tile-icon">🔴</span><span class="tile-price">100K</span><div class="star-container"></div></div>
-
-      <!-- ศูนย์กลางกระดาน -->
-      <div class="board-center">
-        <div class="turn-indicator" id="current-turn-display">ตาของ: -</div>
-        <div class="dice-area">
-          <div class="dice">⚀</div>
-          <div class="dice">⚁</div>
-        </div>
-        <button class="roll-btn">ทอยลูกเต๋า</button>
-      </div>
-
-      <div class="tile"><span class="tile-name">ดาวพฤหัส</span><span class="tile-icon">🪐</span><span class="tile-price">130K</span><div class="star-container"></div></div>
-      <div class="tile"><span class="tile-name">ไอโอ</span><span class="tile-icon">🟡</span><span class="tile-price">140K</span><div class="star-container"></div></div>
-      <div class="tile"><span class="tile-name">ยูโรปา</span><span class="tile-icon">⚪</span><span class="tile-price">150K</span><div class="star-container"></div></div>
-
-      <div class="tile"><span class="tile-name">สถานีอวกาศ</span><span class="tile-icon">🛰️</span><span class="tile-price">วาป</span></div>
-      <div class="tile"><span class="tile-name">ดาวพลูโต</span><span class="tile-icon">❄️</span><span class="tile-price">280K</span><div class="star-container"></div></div>
-      <div class="tile"><span class="tile-name">ไทรทัน</span><span class="tile-icon">🔮</span><span class="tile-price">260K</span><div class="star-container"></div></div>
-      <div class="tile"><span class="tile-name">ดาวเนปจูน</span><span class="tile-icon">🔵</span><span class="tile-price">250K</span><div class="star-container"></div></div>
-      <div class="tile"><span class="tile-name">หลุมดำ</span><span class="tile-icon">🕳️</span><span class="tile-price">ตกเกาะ</span></div>
-    </div>
-
-    <!-- แผงผู้เล่นฝั่งขวา (P2, P4) -->
-    <div class="player-sidebar" id="sidebar-right"></div>
-  </div>
-
-  <script>
-    // ไอคอนที่มีให้เลือกแทนตัวผู้เล่น
-    const availableIcons = ['🚀', '🛸', '👨‍🚀', '👩‍🚀', '👾', '🤖', '🛰️', '☄️'];
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Equation Monopoly - เกมเศรษฐีการแก้สมการอวกาศ</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Thai & Math -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;800&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    // สีประจำตัวผู้เล่น 1-4
-    const playerColors = [
-      { border: '#ff4b5c', tagBg: 'rgba(255, 75, 92, 0.2)', tagColor: '#ff4b5c' },
-      { border: '#00d2ff', tagBg: 'rgba(0, 210, 255, 0.2)', tagColor: '#00d2ff' },
-      { border: '#00e676', tagBg: 'rgba(0, 230, 118, 0.2)', tagColor: '#00e676' },
-      { border: '#ffea00', tagBg: 'rgba(255, 234, 0, 0.2)', tagColor: '#ffea00' }
-    ];
-
-    // ข้อมูลผู้เล่นเริ่มต้น (2 คน)
-    let players = [
-      { id: 1, name: 'นักบิน 1', icon: '🚀', money: 500000 },
-      { id: 2, name: 'นักบิน 2', icon: '🛸', money: 500000 }
-    ];
-
-    // ฟังก์ชัน Render รายชื่อผู้เล่นในหน้า Setup
-    function renderSetupPlayers() {
-      const container = document.getElementById('players-container');
-      container.innerHTML = '';
-
-      players.forEach((p, index) => {
-        const color = playerColors[index];
-        
-        // สร้าง HTML ตัวเลือกไอคอน
-        let iconsHtml = availableIcons.map(icon => `
-          <div class="avatar-opt ${p.icon === icon ? 'selected' : ''}" 
-               onclick="selectIcon(${index}, '${icon}')">
-            ${icon}
-          </div>
-        `).join('');
-
-        const card = document.createElement('div');
-        card.className = 'player-input-card';
-        card.style.borderColor = p.icon ? color.border : '#30363d';
-        
-        card.innerHTML = `
-          <span class="player-number-tag" style="background: ${color.tagBg}; color: ${color.tagColor};">
-            P${p.id}
-          </span>
-          <input type="text" class="name-input" value="${p.name}" 
-                 onchange="updateName(${index}, this.value)" placeholder="ชื่อผู้เล่น">
-          <div class="avatar-picker">
-            ${iconsHtml}
-          </div>
-          ${players.length > 2 ? `<button style="background:none; border:none; color:#ff4b5c; cursor:pointer; font-size:1.2rem;" onclick="removePlayer(${index})">✕</button>` : ''}
-        `;
-        container.appendChild(card);
-      });
-
-      // ซ่อนปุ่มเพิ่มถ้าครบ 4 คน
-      document.getElementById('add-player-btn').style.display = players.length >= 4 ? 'none' : 'inline-block';
-    }
-
-    // เลือกรอบไอคอน
-    function selectIcon(playerIndex, icon) {
-      players[playerIndex].icon = icon;
-      renderSetupPlayers();
-    }
-
-    // อัปเดตชื่อผู้เล่น
-    function updateName(playerIndex, name) {
-      players[playerIndex].name = name || `นักบิน ${playerIndex + 1}`;
-    }
-
-    // เพิ่มผู้เล่น (สูงสุด 4 คน)
-    function addPlayer() {
-      if (players.length < 4) {
-        const nextId = players.length + 1;
-        const defaultIcon = availableIcons[nextId - 1] || '🤖';
-        players.push({
-          id: nextId,
-          name: `นักบิน ${nextId}`,
-          icon: defaultIcon,
-          money: 500000
-        });
-        renderSetupPlayers();
-      }
-    }
-
-    // ลบผู้เล่น (ขั้นต่ำ 2 คน)
-    function removePlayer(index) {
-      if (players.length > 2) {
-        players.splice(index, 1);
-        // รีรัน ID ให้เรียง 1-N ใหม่
-        players.forEach((p, i) => p.id = i + 1);
-        renderSetupPlayers();
-      }
-    }
-
-    // กดเริ่มเกม
-    function startGame() {
-      document.getElementById('setup-screen').style.display = 'none';
-      document.getElementById('game-screen').style.display = 'flex';
-
-      const leftSidebar = document.getElementById('sidebar-left');
-      const rightSidebar = document.getElementById('sidebar-right');
-      leftSidebar.innerHTML = '';
-      rightSidebar.innerHTML = '';
-
-      // กระจายผู้เล่นลง Sidebar (P1, P3 ฝั่งซ้าย / P2, P4 ฝั่งขวา)
-      players.forEach((p, index) => {
-        const color = playerColors[index];
-        const playerCardHtml = `
-          <div class="player-card ${index === 0 ? 'active-turn' : ''}" style="border-left: 6px solid ${color.border};">
-            <div class="player-avatar">${p.icon}</div>
-            <span class="player-name">${p.name}</span>
-            <span class="player-money">${p.money.toLocaleString()} $</span>
-          </div>
-        `;
-
-        if (index % 2 === 0) {
-          leftSidebar.innerHTML += playerCardHtml;
-        } else {
-          rightSidebar.innerHTML += playerCardHtml;
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        spaceBg: '#090d16',
+                        spaceCard: '#121829',
+                        spaceBorder: '#232d48',
+                        neonCyan: '#00f0ff',
+                        neonPink: '#ff007f',
+                        neonYellow: '#ffea00',
+                        neonGreen: '#00ff88',
+                        neonPurple: '#a855f7'
+                    },
+                    fontFamily: {
+                        kanit: ['Kanit', 'sans-serif'],
+                        sarabun: ['Sarabun', 'sans-serif']
+                    }
+                }
+            }
         }
-      });
+    </script>
 
-      // อัปเดตตัวแสดงตาผู้เล่น
-      document.getElementById('current-turn-display').innerHTML = `ตาของ: ${players[0].icon} ${players[0].name}`;
-    }
+    <style>
+        body {
+            font-family: 'Kanit', 'Sarabun', sans-serif;
+            background-color: #090d16;
+            color: #ffffff;
+            overflow-x: hidden;
+            user-select: none;
+        }
 
-    // แสดงผลครั้งแรก
-    renderSetupPlayers();
-  </script>
+        /* Starry space background */
+        .stars-bg {
+            background: radial-gradient(ellipse at bottom, #111a2e 0%, #05070c 100%);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+        }
+
+        @keyframes neonGlow {
+            0%, 100% { box-shadow: 0 0 10px #00f0ff, inset 0 0 5px #00f0ff; }
+            50% { box-shadow: 0 0 22px #00f0ff, 0 0 32px #00f0ff, inset 0 0 12px #00f0ff; }
+        }
+
+        .active-turn-glow {
+            animation: neonGlow 1.4s infinite alternate;
+        }
+
+        /* Monopoly Grid 6x6 layout */
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 4px;
+            aspect-ratio: 1 / 1;
+            max-width: 820px;
+            width: 100%;
+            margin: auto;
+        }
+
+        /* Dice 3D Effect */
+        .dice {
+            width: 52px;
+            height: 52px;
+            background: #ffffff;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 26px;
+            font-weight: 800;
+            color: #0f172a;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.6), inset 0 0 8px rgba(0,0,0,0.15);
+            transition: transform 0.2s;
+        }
+
+        .dice-cyan {
+            background: linear-gradient(135deg, #e0f7fa, #00f0ff);
+            color: #032b30;
+        }
+
+        .dice-gold {
+            background: linear-gradient(135deg, #fffde7, #ffea00);
+            color: #3e2723;
+        }
+
+        .rolling {
+            animation: spin 0.35s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg) scale(0.9); }
+            50% { transform: rotate(180deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(0.9); }
+        }
+
+        /* Player Marker Tokens */
+        .player-token {
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            filter: drop-shadow(0 0 6px rgba(255,255,255,0.9));
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #121829;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #232d48;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f0ff;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-2 sm:p-4 text-slate-100 relative">
+    <div class="stars-bg"></div>
+
+    <!-- TOP HEADER / NAVBAR -->
+    <header class="w-full max-w-7xl mx-auto flex flex-wrap justify-between items-center bg-spaceCard/90 backdrop-blur-md border border-spaceBorder p-3 rounded-2xl shadow-xl gap-2 mb-3 z-10">
+        <div class="flex items-center gap-3">
+            <div class="bg-gradient-to-r from-neonCyan to-neonPink p-2.5 rounded-xl text-slate-950 font-black text-xl sm:text-2xl flex items-center gap-2 shadow-lg">
+                <i class="fa-solid fa-rocket me-1"></i> SPACE EQUATION
+            </div>
+            <div>
+                <h1 class="text-xs sm:text-sm font-bold text-cyan-300">เกมเศรษฐีการแก้สมการอวกาศ</h1>
+                <p id="gradeDisplayBadge" class="text-[11px] text-slate-400">ระดับชั้น: ป.4 (สมการ 1 ขั้น)</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <div class="bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-700 text-xs sm:text-sm flex items-center gap-2">
+                <i class="fa-solid fa-hourglass-half text-neonYellow"></i>
+                <span>รอบที่: <strong id="currentRoundText" class="text-neonYellow">1</strong> / 30</span>
+            </div>
+
+            <button onclick="toggleSound()" id="soundBtn" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
+                <i class="fa-solid fa-volume-high text-neonCyan" id="soundIcon"></i> เสียง: เปิด
+            </button>
+
+            <button onclick="openRulebookModal()" class="bg-purple-900/60 hover:bg-purple-800 border border-purple-500/50 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium transition flex items-center gap-1.5 text-purple-200">
+                <i class="fa-solid fa-book-open"></i> กฎการเล่น
+            </button>
+
+            <button onclick="confirmRestartGame()" class="bg-rose-900/60 hover:bg-rose-800 border border-rose-500/50 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium transition flex items-center gap-1.5 text-rose-200">
+                <i class="fa-solid fa-rotate-left"></i> เริ่มใหม่
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT GRID -->
+    <main class="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 items-start flex-1 mb-4">
+        
+        <!-- LEFT/CENTER: 6x6 MONOPOLY BOARD AREA -->
+        <section class="lg:col-span-8 flex flex-col items-center justify-center relative">
+            <div id="boardContainer" class="board-grid bg-slate-950/90 p-2 rounded-2xl border-2 border-spaceBorder shadow-2xl relative">
+                <!-- 20 BOARD TILES WILL BE GENERATED DYNAMICALLY BY JS -->
+                
+                <!-- BOARD CENTER CONTROL DASHBOARD -->
+                <div class="col-start-2 col-span-4 row-start-2 row-span-4 bg-spaceCard/95 border border-cyan-500/30 rounded-xl p-3 sm:p-5 flex flex-col justify-between items-center relative overflow-hidden shadow-inner">
+                    <div class="absolute inset-0 bg-gradient-to-br from-indigo-950/40 via-purple-950/20 to-slate-950/80 pointer-events-none"></div>
+
+                    <!-- Current Turn Header -->
+                    <div class="w-full flex justify-between items-center z-10 border-b border-slate-700/60 pb-2">
+                        <div class="flex items-center gap-2">
+                            <span id="turnAvatar" class="text-2xl sm:text-3xl">👨‍🚀</span>
+                            <div>
+                                <div class="text-[10px] text-slate-400 uppercase tracking-widest">ตานี้ของผู้เล่น</div>
+                                <div id="turnPlayerName" class="font-extrabold text-sm sm:text-base text-neonCyan">แคปเทนแอสโทร</div>
+                            </div>
+                        </div>
+                        <div id="turnSkillBadge" class="text-[11px] bg-slate-900/80 text-cyan-300 border border-cyan-500/30 px-2.5 py-1 rounded-full flex items-center gap-1">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> สกิล: Dice Master
+                        </div>
+                    </div>
+
+                    <!-- Dice Display & Roll Controls -->
+                    <div class="my-3 flex flex-col items-center gap-3 z-10">
+                        <div class="flex gap-4 items-center">
+                            <div id="dice1" class="dice dice-cyan">1</div>
+                            <div id="dice2" class="dice dice-gold">1</div>
+                        </div>
+                        <div id="diceSumText" class="text-xs sm:text-sm font-semibold text-slate-300 h-5">
+                            กดปุ่ม "ทอยลูกเต๋า" เพื่อเริ่มเคลื่อนที่!
+                        </div>
+
+                        <div class="flex gap-2 flex-wrap justify-center">
+                            <button id="rollDiceBtn" onclick="humanRollDice()" class="bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-slate-950 font-black text-base sm:text-lg px-7 py-2.5 rounded-xl shadow-lg transform active:scale-95 transition flex items-center gap-2">
+                                <i class="fa-solid fa-dice text-xl"></i> ทอยลูกเต๋า
+                            </button>
+                            <button id="autoBotToggleBtn" onclick="toggleAutoBotSpeed()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs px-3 py-2 rounded-xl text-slate-300 transition flex items-center gap-1">
+                                <i class="fa-solid fa-bolt text-neonYellow"></i> บอทเร็ว: <span id="autoBotStatusText">ปกติ</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Activity Log Feed -->
+                    <div class="w-full bg-slate-950/80 rounded-xl p-2.5 border border-slate-800 text-xs z-10 h-24 sm:h-28 overflow-y-auto flex flex-col gap-1.5" id="gameLog">
+                        <div class="text-cyan-400 italic text-[11px]"><i class="fa-solid fa-circle-info"></i> ยินดีต้อนรับสู่เกมเศรษฐีการแก้สมการอวกาศ! พร้อมออกสำรวจดวงดาวหรือยัง?</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT SIDEBAR: PLAYER CARDS & QUICK TIP -->
+        <section class="lg:col-span-4 flex flex-col gap-3">
+            <div class="bg-spaceCard/90 border border-spaceBorder rounded-2xl p-3 sm:p-4 shadow-xl">
+                <h2 class="text-sm font-bold text-slate-300 mb-3 flex items-center justify-between border-b border-slate-700/60 pb-2">
+                    <span><i class="fa-solid fa-users text-neonCyan me-1.5"></i> สถานะผู้เล่น (<span id="playerCountLabel">4</span> คน)</span>
+                    <span class="text-[11px] text-slate-400">เครดิตอวกาศ 🪙</span>
+                </h2>
+
+                <div id="playerListContainer" class="flex flex-col gap-2.5">
+                    <!-- Dynamic Player Cards rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Quick Math Tip Card -->
+            <div class="bg-gradient-to-br from-indigo-950/70 to-purple-950/70 border border-indigo-500/30 rounded-2xl p-3.5 shadow-lg">
+                <div class="flex items-center gap-2 text-indigo-300 font-bold text-xs mb-1">
+                    <i class="fa-solid fa-lightbulb text-neonYellow"></i> หลักการแก้สมการง่ายๆ:
+                </div>
+                <p class="text-[11px] text-slate-300 leading-relaxed">
+                    ย้ายข้างด้วยเครื่องหมายตรงข้าม: บวก (+) เป็น ลบ (-), ลบ (-) เป็น บวก (+), คูณ (×) เป็น หาร (÷) และอย่าลืมคำนวณในวงเล็บก่อนเสมอ!
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL 1: START & GAME SETUP SCREEN -->
+    <div id="setupModal" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+        <div class="bg-spaceCard border-2 border-neonCyan/60 rounded-3xl p-5 sm:p-7 max-w-3xl w-full shadow-2xl relative my-auto">
+            <div class="text-center mb-5">
+                <div class="inline-block bg-gradient-to-r from-neonCyan via-indigo-300 to-neonPink bg-clip-text text-transparent font-black text-2xl sm:text-4xl mb-1">
+                    🚀 SPACE EQUATION MONOPOLY
+                </div>
+                <p class="text-slate-300 text-xs sm:text-sm">เกมเศรษฐีการแก้สมการอวกาศ สนุก ได้ความรู้ เก่งคณิตศาสตร์</p>
+            </div>
+
+            <!-- Grade Selector -->
+            <div class="mb-4 bg-slate-900/80 p-3.5 rounded-2xl border border-slate-700">
+                <label class="block text-xs sm:text-sm font-bold text-neonCyan mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap"></i> 1. เลือกระดับชั้นเรียน (ระดับความยากสมการ):
+                </label>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <button type="button" onclick="selectGrade('p4')" id="gradeBtn_p4" class="grade-select-btn p-3 rounded-xl border border-slate-600 bg-slate-800 text-left hover:border-cyan-400 transition text-xs">
+                        <div class="font-bold text-cyan-300 text-sm">ประถมศึกษาปีที่ 4</div>
+                        <div class="text-[11px] text-slate-400 mt-1">สมการขั้นตอนเดียว (x + 15 = 42, 4x = 36)</div>
+                    </button>
+                    <button type="button" onclick="selectGrade('p5')" id="gradeBtn_p5" class="grade-select-btn p-3 rounded-xl border border-slate-600 bg-slate-800 text-left hover:border-cyan-400 transition text-xs">
+                        <div class="font-bold text-indigo-300 text-sm">ประถมศึกษาปีที่ 5</div>
+                        <div class="text-[11px] text-slate-400 mt-1">สมการสองขั้นตอน (2x + 10 = 30, 3x - 5 = 16)</div>
+                    </button>
+                    <button type="button" onclick="selectGrade('p6')" id="gradeBtn_p6" class="grade-select-btn p-3 rounded-xl border border-slate-600 bg-slate-800 text-left hover:border-cyan-400 transition text-xs">
+                        <div class="font-bold text-pink-300 text-sm">ประถมศึกษาปีที่ 6</div>
+                        <div class="text-[11px] text-slate-400 mt-1">สมการวงเล็บ/สองข้าง (4(x-3)=24, 3x+15=2x+25)</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Player Setup & Customization -->
+            <div class="mb-5 bg-slate-900/80 p-3.5 rounded-2xl border border-slate-700">
+                <div class="flex justify-between items-center mb-3">
+                    <label class="text-xs sm:text-sm font-bold text-neonYellow flex items-center gap-2">
+                        <i class="fa-solid fa-users"></i> 2. กำหนดผู้เล่นและตกแต่ง (1 - 6 คน):
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <button onclick="changePlayerSetupCount(-1)" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 text-lg font-bold flex items-center justify-center">-</button>
+                        <span id="setupPlayerCountText" class="font-bold text-lg text-neonCyan w-6 text-center">4</span>
+                        <button onclick="changePlayerSetupCount(1)" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 text-lg font-bold flex items-center justify-center">+</button>
+                    </div>
+                </div>
+
+                <div id="setupPlayerList" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-56 overflow-y-auto pr-1">
+                    <!-- Populated dynamically by JS -->
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex flex-col sm:flex-row gap-3 items-center justify-between pt-1">
+                <button onclick="openRulebookModal()" class="w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl text-xs font-semibold text-slate-300 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-book"></i> กฎการเล่น & ชัยชนะ
+                </button>
+                <button onclick="startGameEngine()" class="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-neonCyan via-blue-600 to-neonPink hover:from-cyan-400 hover:to-pink-500 text-slate-950 font-black text-lg rounded-2xl shadow-xl transform active:scale-95 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-play"></i> เริ่มออกสำรวจอวกาศ!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: EDUCATIONAL EQUATION CHALLENGE MODAL -->
+    <div id="equationModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="bg-spaceCard border-2 border-neonCyan rounded-3xl p-5 sm:p-7 max-w-2xl w-full shadow-2xl relative my-auto">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-3xl" id="eqPlayerAvatar">👨‍🚀</span>
+                    <div>
+                        <div id="eqPlayerName" class="font-bold text-sm text-neonCyan">แคปเทนแอสโทร</div>
+                        <div id="eqActionTypeTitle" class="text-xs text-slate-300">ภารกิจแก้สมการเพื่อซื้อ: ดาวพุธ</div>
+                    </div>
+                </div>
+                <div class="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-3 py-1 rounded-full font-bold flex items-center gap-1.5">
+                    <i class="fa-solid fa-coins"></i> โบนัสตอบถูก +500 🪙
+                </div>
+            </div>
+
+            <!-- Question Card -->
+            <div class="bg-slate-900/90 border border-slate-700 rounded-2xl p-5 text-center mb-5 shadow-inner">
+                <div class="text-xs text-cyan-400 font-semibold mb-2">จงแก้สมการเพื่อหาค่าของตัวแปร x:</div>
+                <div id="equationQuestionText" class="text-3xl sm:text-4xl font-black text-neonYellow my-3 font-mono tracking-wider">
+                    x + 15 = 42
+                </div>
+                <div class="text-[11px] text-slate-400">เลือกคำตอบที่ถูกต้องเพื่อครอบครองดวงดาว</div>
+            </div>
+
+            <!-- 4 Options Grid -->
+            <div id="equationOptionsGrid" class="grid grid-cols-2 gap-3 mb-4">
+                <!-- Dynamically populated choices -->
+            </div>
+
+            <!-- Step-by-Step Educational Explanation (Shown on wrong answer) -->
+            <div id="equationExplanationBox" class="hidden bg-rose-950/80 border border-rose-500/60 rounded-2xl p-4 text-xs sm:text-sm text-rose-100">
+                <div class="font-bold text-rose-300 text-sm mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-xmark text-rose-400 text-lg"></i> ตอบไม่ถูกต้อง! เฉลยและขั้นตอนคิดแบบง่าย:
+                </div>
+                <div id="explanationStepsContainer" class="flex flex-col gap-2 bg-slate-950/70 p-3 rounded-xl border border-rose-900/50 text-slate-200">
+                    <!-- Dynamic steps rendered by JS -->
+                </div>
+                <button onclick="closeEquationModalAndContinue()" class="mt-4 w-full py-2.5 bg-rose-700 hover:bg-rose-600 font-bold text-white rounded-xl shadow transition">
+                    เข้าใจแล้ว ดำเนินการต่อ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: WARP STATION / WORLD TOUR SELECTION MODAL -->
+    <div id="warpModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="bg-spaceCard border-2 border-neonPink rounded-3xl p-5 sm:p-7 max-w-3xl w-full shadow-2xl relative my-auto">
+            <h3 class="text-xl font-extrabold text-neonPink mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-shuttle-space"></i> วาร์ปสเตชั่น / ท่องอวกาศ (Warp Station)
+            </h3>
+            <p class="text-xs text-slate-300 mb-4">เลือกช่องดวงดาวที่คุณต้องการเดินทางวาร์ปไปลงทันที!</p>
+
+            <div id="warpTilesGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-h-80 overflow-y-auto p-1">
+                <!-- Renders warp tile choices -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: BLACK HOLE / JAIL ESCAPE CHOICES MODAL -->
+    <div id="blackHoleModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="bg-spaceCard border-2 border-purple-500 rounded-3xl p-5 sm:p-7 max-w-lg w-full shadow-2xl relative my-auto text-center">
+            <div class="text-4xl mb-2">🕳️</div>
+            <h3 class="text-xl font-extrabold text-purple-300 mb-1">ติดอยู่ในหลุมดำอวกาศ!</h3>
+            <p id="blackHoleStatusText" class="text-xs text-slate-300 mb-5">เหลือติดอยู่หลุมดำอีก 3 ตา เลือกวิธีออกจากหลุมดำ:</p>
+
+            <div class="flex flex-col gap-2.5">
+                <button onclick="handleBlackHoleChoice('double')" class="p-3 bg-slate-800 hover:bg-slate-700 border border-purple-500/50 rounded-xl text-xs sm:text-sm font-bold text-purple-200 transition flex items-center justify-between">
+                    <span><i class="fa-solid fa-dice me-2"></i> 1. วัดดวงทอยลูกเต๋าเบิ้ล</span>
+                    <span class="text-[10px] bg-purple-950 px-2 py-0.5 rounded text-purple-300">ฟรี (ต้องทอยได้เลขคู่)</span>
+                </button>
+                <button onclick="handleBlackHoleChoice('pay')" class="p-3 bg-slate-800 hover:bg-slate-700 border border-amber-500/50 rounded-xl text-xs sm:text-sm font-bold text-amber-200 transition flex items-center justify-between">
+                    <span><i class="fa-solid fa-coins me-2"></i> 2. จ่ายค่าปรับอวกาศ 1,000 🪙</span>
+                    <span class="text-[10px] bg-amber-950 px-2 py-0.5 rounded text-amber-300">ออกทันที</span>
+                </button>
+                <button id="useEscapeCardBtn" onclick="handleBlackHoleChoice('card')" class="p-3 bg-slate-800 hover:bg-slate-700 border border-cyan-500/50 rounded-xl text-xs sm:text-sm font-bold text-cyan-200 transition flex items-center justify-between">
+                    <span><i class="fa-solid fa-ticket me-2"></i> 3. ใช้การ์ดหนีหลุมดำ</span>
+                    <span id="escapeCardCountBadge" class="text-[10px] bg-cyan-950 px-2 py-0.5 rounded text-cyan-300">มี 0 ใบ</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: CHANCE CARD REVEAL MODAL -->
+    <div id="chanceModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="bg-spaceCard border-2 border-neonYellow rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative my-auto text-center">
+            <div class="text-5xl mb-3 animate-bounce">🎁</div>
+            <h3 class="text-xl font-extrabold text-neonYellow mb-2">กล่องดวงอวกาศ!</h3>
+            <div id="chanceCardText" class="text-sm text-slate-200 bg-slate-900/90 p-4 rounded-2xl border border-slate-700 my-4 leading-relaxed font-semibold">
+                ได้รับทุนสนับสนุนการวิจัยอวกาศ +1,500 🪙
+            </div>
+            <button onclick="closeChanceModal()" class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl transition shadow">
+                รับทราบ
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL 6: RULEBOOK & GUIDELINES MODAL -->
+    <div id="rulebookModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="bg-spaceCard border border-purple-500/50 rounded-3xl p-5 sm:p-7 max-w-2xl w-full shadow-2xl relative my-auto max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4">
+                <h3 class="text-xl font-bold text-purple-300 flex items-center gap-2">
+                    <i class="fa-solid fa-book-open"></i> คู่มือการเล่น & เงื่อนไขชัยชนะ
+                </h3>
+                <button onclick="closeRulebookModal()" class="text-slate-400 hover:text-white text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed">
+                <div>
+                    <h4 class="font-bold text-neonCyan text-sm mb-1">🎯 เป้าหมายของเกม:</h4>
+                    <p>ครอบครองดวงดาวอวกาศ แก้โจทย์สมการให้ถูกต้อง และทำให้คู่แข่งล้มละลายหรือบรรลุเงื่อนไขชัยชนะพิเศษ!</p>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-neonYellow text-sm mb-1">🎲 ช่องเดินพิเศษบนกระดาน:</h4>
+                    <ul class="list-disc list-inside space-y-1 pl-2">
+                        <li><strong>จุดเริ่มต้น (Start):</strong> ได้รับเงินเดือน 2,000 🪙 ทุกครั้งที่เดินผ่านหรือตก</li>
+                        <li><strong>หลุมดำ (Black Hole):</strong> ติดอยู่ 3 ตา เลือกทอยเบิ้ล, จ่าย 1,000 🪙 หรือใช้การ์ดหนี</li>
+                        <li><strong>วาร์ปสเตชั่น (Warp Station):</strong> เลือกบินไปตกช่องใดก็ได้บนกระดานทันที</li>
+                        <li><strong>ดวงอวกาศ (Chance):</strong> สุ่มการ์ดเหตุการณ์ (โบนัสเงิน, เสียเงินซ่อมยาน, ได้การ์ดหนี)</li>
+                        <li><strong>ภาษีอวกาศ (Tax):</strong> จ่ายภาษี 10% ของเงินสด หรือ 1,500 🪙</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-neonGreen text-sm mb-1">🏆 เงื่อนไขการชนะเกม (Victory Conditions):</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                        <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-700">
+                            <strong class="text-pink-400">1. Bankruptcy Victory:</strong>
+                            <p class="text-[11px] text-slate-400">คู่แข่งล้มละลายหมดจนเหลือผู้เล่นคนสุดท้าย</p>
+                        </div>
+                        <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-700">
+                            <strong class="text-cyan-400">2. Triple Victory:</strong>
+                            <p class="text-[11px] text-slate-400">ครอบครองดวงดาวครบทั้งกลุ่มสี 3 สี</p>
+                        </div>
+                        <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-700">
+                            <strong class="text-yellow-400">3. Line Victory:</strong>
+                            <p class="text-[11px] text-slate-400">ครอบครองดวงดาวครบทุกช่องในแถวด้านใดด้านหนึ่ง</p>
+                        </div>
+                        <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-700">
+                            <strong class="text-emerald-400">4. Tourist Victory:</strong>
+                            <p class="text-[11px] text-slate-400">ครอบครองสถานที่ท่องเที่ยวอวกาศครบทั้ง 3 แห่ง</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="closeRulebookModal()" class="mt-6 w-full py-2.5 bg-purple-700 hover:bg-purple-600 font-bold text-white rounded-xl shadow transition">
+                รับทราบ ปิดคู่มือ
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL 7: VICTORY & SUMMARY DASHBOARD -->
+    <div id="summaryModal" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-lg flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="bg-spaceCard border-2 border-neonYellow rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl text-center my-auto relative">
+            <div class="text-4xl sm:text-5xl mb-2 animate-bounce">🏆</div>
+            <h2 class="text-2xl sm:text-4xl font-black text-neonYellow mb-1">สรุปผลการแข่งขันอวกาศ!</h2>
+            <div id="victoryReasonText" class="text-sm text-cyan-300 mb-6 font-semibold">ชนะด้วยเงื่อนไข: Bankruptcy Victory</div>
+
+            <!-- Winner Banner -->
+            <div id="winnerBanner" class="bg-gradient-to-r from-yellow-500/20 via-amber-500/30 to-yellow-500/20 border-2 border-amber-400 rounded-2xl p-4 mb-6 flex items-center justify-center gap-4">
+                <span id="winnerAvatar" class="text-4xl sm:text-5xl">👨‍🚀</span>
+                <div class="text-left">
+                    <div class="text-xs text-amber-300 uppercase tracking-widest font-bold">ผู้ชนะเลิศอันดับ 1</div>
+                    <div id="winnerName" class="text-xl sm:text-2xl font-black text-white">แคปเทนแอสโทร</div>
+                    <div id="winnerNetWorth" class="text-xs text-yellow-300 font-semibold mt-0.5">มูลค่าทรัพย์สินรวม: 25,400 🪙</div>
+                </div>
+            </div>
+
+            <!-- Scoreboard Table -->
+            <div class="bg-slate-900/90 rounded-2xl p-3 border border-slate-700 mb-6 overflow-x-auto">
+                <table class="w-full text-left text-xs sm:text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-700 text-slate-400">
+                            <th class="p-2">อันดับ</th>
+                            <th class="p-2">ผู้เล่น</th>
+                            <th class="p-2">เงินสด</th>
+                            <th class="p-2">ดาวที่ครอบครอง</th>
+                            <th class="p-2">ความแม่นยำสมการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summaryTableBody">
+                        <!-- Dynamic Summary Rows -->
+                    </tbody>
+                </table>
+            </div>
+
+            <button onclick="location.reload()" class="w-full py-3 bg-gradient-to-r from-neonCyan via-blue-600 to-neonPink hover:from-cyan-400 hover:to-pink-500 text-slate-950 font-black text-lg rounded-xl shadow-xl transition">
+                <i class="fa-solid fa-rotate-right me-2"></i> เล่นใหม่อีกครั้ง
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // WEB AUDIO API SOUND SYNTHESIZER
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundBtn');
+            const icon = document.getElementById('soundIcon');
+            if (soundEnabled) {
+                btn.classList.remove('opacity-50');
+                icon.className = 'fa-solid fa-volume-high text-neonCyan';
+                btn.innerHTML = `<i class="fa-solid fa-volume-high text-neonCyan"></i> เสียง: เปิด`;
+            } else {
+                btn.classList.add('opacity-50');
+                btn.innerHTML = `<i class="fa-solid fa-volume-xmark text-rose-400"></i> เสียง: ปิด`;
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            try {
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'roll') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(660, now + 0.15);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.setValueAtTime(120, now + 0.15);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'cash') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(987.77, now); // B5
+                    osc.frequency.setValueAtTime(1318.51, now + 0.08); // E6
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'warp') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.3);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                }
+            } catch (e) {
+                console.log('Audio error:', e);
+            }
+        }
+
+        // CHARACTER PRESETS WITH UNIQUE SPACE PASSIVES
+        const CHARACTER_PRESETS = [
+            { id: 'astro', name: 'แคปเทนแอสโทร', avatar: '👨‍🚀', skill: 'Dice Master (+20% เงินเดือน)', salaryBonus: 0.2 },
+            { id: 'zoe', name: 'มนุษย์ต่างดาวโซอี้', avatar: '👽', skill: 'Alien Shield (-15% ค่าผ่านทาง)', tollDiscount: 0.15 },
+            { id: 'robox', name: 'หุ่นยนต์โรโบ-เอ็กซ์', avatar: '🤖', skill: 'Math Engine (+200 🪙 โบนัสตอบถูก)', mathBonus: 200 },
+            { id: 'bunny', name: 'กระต่ายอวกาศ', avatar: '🐰', skill: 'Lucky Jump (หลบหลุมดำสำเร็จง่ายขึ้น)', luckyJail: true },
+            { id: 'nebula', name: 'เจ้าหญิงเนบิวลา', avatar: '👸', skill: 'Star Builder (-20% ค่าอัปเกรด)', upgradeDiscount: 0.2 },
+            { id: 'orion', name: 'นักบินโอเรียน', avatar: '🛸', skill: 'Double Booster (+300 🪙 เมื่อทอยเบิ้ล)', doubleBonus: 300 }
+        ];
+
+        const DICE_THEMES = [
+            { id: 'classic', name: 'ลูกเต๋าคลาสสิก 🎲', class: 'dice' },
+            { id: 'cyan', name: 'ลูกเต๋านีออนฟ้า 💎', class: 'dice dice-cyan' },
+            { id: 'gold', name: 'ลูกเต๋าทองคำ 🌟', class: 'dice dice-gold' }
+        ];
+
+        const PENDANT_TYPES = [
+            { id: 'salary', name: 'จี้ดวงดาวโชคดี (+10% เงินเดือน)' },
+            { id: 'discount', name: 'จี้ส่วนลดเมือง (-10% ราคาซื้อ)' },
+            { id: 'shield', name: 'จี้โล่ป้องกัน (-15% ค่าผ่านทาง)' },
+            { id: 'math', name: 'จี้สมองกลคณิต (+200 🪙 ตอบถูก)' }
+        ];
+
+        // 20 BOARD TILES CONFIGURATION (6x6 Grid Loop)
+        const BOARD_TILES = [
+            { id: 0, name: 'จุดเริ่มต้น', type: 'start', icon: '🚀', colorGroup: 'special', gridPos: { col: 1, row: 1 } },
+            { id: 1, name: 'ดาวพุธ', type: 'property', group: 'red', cost: 1000, baseToll: 200, icon: '🪐', colorGroup: '#ef4444', gridPos: { col: 2, row: 1 } },
+            { id: 2, name: 'ดาวศุกร์', type: 'property', group: 'red', cost: 1200, baseToll: 240, icon: '🌕', colorGroup: '#ef4444', gridPos: { col: 3, row: 1 } },
+            { id: 3, name: 'ดวงอวกาศ 1', type: 'chance', icon: '🎁', colorGroup: 'special', gridPos: { col: 4, row: 1 } },
+            { id: 4, name: 'ดาวอังคาร', type: 'property', group: 'orange', cost: 1600, baseToll: 320, icon: '🔴', colorGroup: '#f97316', gridPos: { col: 5, row: 1 } },
+            { id: 5, name: 'หลุมดำ', type: 'jail', icon: '🕳️', colorGroup: 'special', gridPos: { col: 6, row: 1 } },
+            
+            { id: 6, name: 'ดาวพฤหัส', type: 'property', group: 'orange', cost: 2000, baseToll: 400, icon: '🟠', colorGroup: '#f97316', gridPos: { col: 6, row: 2 } },
+            { id: 7, name: 'สายการบินกาแล็กซี', type: 'tourist', cost: 2500, baseToll: 750, icon: '🛸', colorGroup: '#06b6d4', gridPos: { col: 6, row: 3 } },
+            { id: 8, name: 'ดาวเสาร์', type: 'property', group: 'yellow', cost: 2400, baseToll: 480, icon: '🪐', colorGroup: '#eab308', gridPos: { col: 6, row: 4 } },
+            { id: 9, name: 'ดวงอวกาศ 2', type: 'chance', icon: '🎁', colorGroup: 'special', gridPos: { col: 6, row: 5 } },
+            
+            { id: 10, name: 'วาร์ปสเตชั่น', type: 'warp', icon: '🌀', colorGroup: 'special', gridPos: { col: 6, row: 6 } },
+            { id: 11, name: 'ดาวยูเรนัส', type: 'property', group: 'yellow', cost: 2800, baseToll: 560, icon: '🌐', colorGroup: '#eab308', gridPos: { col: 5, row: 6 } },
+            { id: 12, name: 'ดาวเนปจูน', type: 'property', group: 'green', cost: 3200, baseToll: 640, icon: '🔵', colorGroup: '#22c55e', gridPos: { col: 4, row: 6 } },
+            { id: 13, name: 'สถานีอวกาศนานาชาติ', type: 'tourist', cost: 2500, baseToll: 750, icon: '📡', colorGroup: '#06b6d4', gridPos: { col: 3, row: 6 } },
+            { id: 14, name: 'ภาษีอวกาศ', type: 'tax', icon: '💳', colorGroup: 'special', gridPos: { col: 2, row: 6 } },
+            { id: 15, name: 'ศูนย์บัญชาการ', type: 'start_bonus', icon: '🏛️', colorGroup: 'special', gridPos: { col: 1, row: 6 } },
+            
+            { id: 16, name: 'ทางช้างเผือก', type: 'property', group: 'green', cost: 3600, baseToll: 720, icon: '🌌', colorGroup: '#22c55e', gridPos: { col: 1, row: 5 } },
+            { id: 17, name: 'ดวงอวกาศ 3', type: 'chance', icon: '🎁', colorGroup: 'special', gridPos: { col: 1, row: 4 } },
+            { id: 18, name: 'ศูนย์ขนส่งดวงดาว', type: 'tourist', cost: 2500, baseToll: 750, icon: '🛗', colorGroup: '#06b6d4', gridPos: { col: 1, row: 3 } },
+            { id: 19, name: 'แอนโดรเมดา', type: 'property', group: 'purple', cost: 4500, baseToll: 900, icon: '✨', colorGroup: '#a855f7', gridPos: { col: 1, row: 2 } }
+        ];
+
+        // GLOBAL GAME STATE
+        let gameState = {
+            grade: 'p4',
+            players: [],
+            currentPlayerIndex: 0,
+            roundCount: 1,
+            maxRounds: 30,
+            boardOwnership: {}, // tileId -> { ownerId, level: 1..4 }
+            isRolling: false,
+            autoBotSpeed: 'normal',
+            pendingEquationCallback: null
+        };
+
+        // 100% ACCURATE MATH EQUATION GENERATOR
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function generateEquation(grade) {
+            let eqText = "";
+            let correctAnswer = 0;
+            let steps = [];
+
+            if (grade === 'p4') {
+                // Grade 4: 1-step equations (Positive integer results)
+                const type = getRandomInt(1, 4);
+                if (type === 1) { // x + a = b
+                    const a = getRandomInt(5, 25);
+                    correctAnswer = getRandomInt(5, 30);
+                    const b = correctAnswer + a;
+                    eqText = `x + ${a} = ${b}`;
+                    steps = [
+                        `ขั้นตอนที่ 1: ย้าย +${a} จากฝั่งซ้ายไปฝั่งขวา เปลี่ยนเป็น -${a}`,
+                        `ขั้นตอนที่ 2: จะได้ x = ${b} - ${a}`,
+                        `สรุปคำตอบ: x = ${correctAnswer}`
+                    ];
+                } else if (type === 2) { // x - a = b
+                    const a = getRandomInt(5, 20);
+                    correctAnswer = getRandomInt(10, 35);
+                    const b = correctAnswer - a;
+                    eqText = `x - ${a} = ${b}`;
+                    steps = [
+                        `ขั้นตอนที่ 1: ย้าย -${a} จากฝั่งซ้ายไปฝั่งขวา เปลี่ยนเป็น +${a}`,
+                        `ขั้นตอนที่ 2: จะได้ x = ${b} + ${a}`,
+                        `สรุปคำตอบ: x = ${correctAnswer}`
+                    ];
+                } else if (type === 3) { // a * x = b
+                    const a = getRandomInt(2, 9);
+                    correctAnswer = getRandomInt(3, 15);
+                    const b = a * correctAnswer;
+                    eqText = `${a}x = ${b}`;
+                    steps = [
+                        `ขั้นตอนที่ 1: ย้าย ${a} ที่คูณอยู่กับ x ไปฝั่งขวา เปลี่ยนเป็น ÷ ${a}`,
+                        `ขั้นตอนที่ 2: จะได้ x = ${b} ÷ ${a}`,
+                        `สรุปคำตอบ: x = ${correctAnswer}`
+                    ];
+                } else { // x / a = b
+                    const a = getRandomInt(2, 8);
+                    correctAnswer = getRandomInt(3, 12);
+                    const b = correctAnswer;
+                    const c = b * a;
+                    eqText = `x ÷ ${a} = ${b}`;
+                    steps = [
+                        `ขั้นตอนที่ 1: ย้าย ÷ ${a} จากฝั่งซ้ายไปฝั่งขวา เปลี่ยนเป็น × ${a}`,
+                        `ขั้นตอนที่ 2: จะได้ x = ${b} × ${a}`,
+                        `สรุปคำตอบ: x = ${c}`
+                    ];
+                    correctAnswer = c;
+                }
+            } else if (grade === 'p5') {
+                // Grade 5: 2-step equations
+                const type = getRandomInt(1, 3);
+                if (type === 1) { // ax + b = c
+                    const a = getRandomInt(2, 6);
+                    const b = getRandomInt(4, 20);
+                    correctAnswer = getRandomInt(2, 12);
+                    const c = a * correctAnswer + b;
+                    eqText = `${a}x + ${b} = ${c}`;
+                    steps = [
+                        `ขั้นตอนที่ 1: ย้าย +${b} ไปฝั่งขวาเป็น -${b} $\\rightarrow$ ${a}x = ${c} - ${b} = ${c - b}`,
+                        `ขั้นตอนที่ 2: ย้าย ${a} ไปหารฝั่งขวา $\\rightarrow$ x = ${c - b} ÷ ${a}`,
+                        `สรุปคำตอบ: x = ${correctAnswer}`
+                    ];
+                } else if (type === 2) { // ax - b = c
+                    const a = getRandomInt(2, 6);
+                    const b = getRandomInt(4, 20);
+                    correctAnswer = getRandomInt(3, 12);
+                    const c = a * correctAnswer - b;
+                    eqText = `${a}x - ${b} = ${c}`;
+                    steps = [
+                        `ขั้นตอนที่ 1: ย้าย -${b} ไปฝั่งขวาเป็น +${b} $\\rightarrow$ ${a}x = ${c} + ${b} = ${c + b}`,
+                        `ขั้นตอนที่ 2: ย้าย ${a} ไปหารฝั่งขวา $\\rightarrow$ x = ${c + b} ÷ ${a}`,
+                        `สรุปคำตอบ: x = ${correctAnswer}`
+                    ];
+                } else { // (x + b) / a = c
+                    const a = getRandomInt(2, 5);
+                    const c = getRandomInt(3, 10);
+                    const b = getRandomInt(1, a * c - 1);
+                    correctAnswer = (a * c) - b;
+                    eqText = `(x + ${b}) ÷ ${a} = ${c}`;
+                    steps = [
+                        `ขั้นตอนที่ 1: ย้าย ÷ ${a} ไปคูณฝั่งขวา $\\rightarrow$ x + ${b} = ${c} × ${a} = ${c * a}`,
+                        `ขั้นตอนที่ 2: ย้าย +${b} ไปลบออกฝั่งขวา $\\rightarrow$ x = ${c * a} - ${b}`,
+                        `สรุปคำตอบ: x = ${correctAnswer}`
+                    ];
+                }
+            } else {
+                // Grade 6: Equations with brackets / variables on both sides
+                const type = getRandomInt(1, 2);
+                if (type === 1) { // a(x - b) = c
+                    const a = getRandomInt(2, 5);
+                    const b = getRandomInt(1, 8);
+                    correctAnswer = getRandomInt(3, 12);
+                    const c = a * (correctAnswer - b);
+                    eqText = `${a}(x - ${b}) = ${c}`;
+                    steps = [
+                        `ขั้นตอนที่ 1: ย้าย ${a} ที่คูณอยู่หน้าวงเล็บไปหารฝั่งขวา $\\rightarrow$ x - ${b} = ${c} ÷ ${a} = ${c / a}`,
+                        `ขั้นตอนที่ 2: ย้าย -${b} ไปบวกฝั่งขวา $\\rightarrow$ x = ${c / a} + ${b}`,
+                        `สรุปคำตอบ: x = ${correctAnswer}`
+                    ];
+                } else { // ax + b = cx + d
+                    const cVal = getRandomInt(2, 4);
+                    const diff = getRandomInt(1, 3);
+                    const aVal = cVal + diff; // aVal > cVal
+                    correctAnswer = getRandomInt(2, 10);
+                    const bVal = getRandomInt(2, 12);
+                    const dVal = (aVal * correctAnswer + bVal) - (cVal * correctAnswer);
+                    eqText = `${aVal}x + ${bVal} = ${cVal}x + ${dVal}`;
+                    steps = [
+                        `ขั้นตอนที่ 1: ย้ายตัวแปร ${cVal}x มาลบฝั่งซ้าย $\\rightarrow$ (${aVal}x - ${cVal}x) + ${bVal} = ${dVal}`,
+                        `ขั้นตอนที่ 2: จะได้ ${diff}x + ${bVal} = ${dVal} $\\rightarrow$ ${diff}x = ${dVal} - ${bVal} = ${dVal - bVal}`,
+                        `ขั้นตอนที่ 3: ย้าย ${diff} ไปหารฝั่งขวา $\\rightarrow$ x = ${dVal - bVal} ÷ ${diff}`,
+                        `สรุปคำตอบ: x = ${correctAnswer}`
+                    ];
+                }
+            }
+
+            // Generate 3 unique wrong choices
+            let options = new Set();
+            options.add(correctAnswer);
+            while (options.size < 4) {
+                let offset = getRandomInt(-5, 5);
+                let wrong = correctAnswer + offset;
+                if (wrong > 0 && wrong !== correctAnswer) {
+                    options.add(wrong);
+                }
+            }
+
+            let shuffledOptions = Array.from(options).sort(() => Math.random() - 0.5);
+
+            return {
+                questionText: eqText,
+                correctAnswer: correctAnswer,
+                options: shuffledOptions,
+                steps: steps
+            };
+        }
+
+        // SETUP MENU CONTROLLER
+        let setupPlayerCount = 4;
+        let selectedGradeLevel = 'p4';
+
+        function selectGrade(grade) {
+            selectedGradeLevel = grade;
+            document.querySelectorAll('.grade-select-btn').forEach(btn => {
+                btn.classList.remove('border-neonCyan', 'bg-cyan-950/60');
+            });
+            const selectedBtn = document.getElementById(`gradeBtn_${grade}`);
+            if (selectedBtn) {
+                selectedBtn.classList.add('border-neonCyan', 'bg-cyan-950/60');
+            }
+        }
+
+        function changePlayerSetupCount(delta) {
+            setupPlayerCount = Math.max(1, Math.min(6, setupPlayerCount + delta));
+            document.getElementById('setupPlayerCountText').innerText = setupPlayerCount;
+            renderSetupPlayerList();
+        }
+
+        function renderSetupPlayerList() {
+            const container = document.getElementById('setupPlayerList');
+            container.innerHTML = '';
+
+            for (let i = 0; i < setupPlayerCount; i++) {
+                const charIndex = i % CHARACTER_PRESETS.length;
+                const char = CHARACTER_PRESETS[charIndex];
+                const isHumanDefault = (i === 0);
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-800/90 p-2.5 rounded-xl border border-slate-700 flex flex-col gap-2 text-xs";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">${char.avatar}</span>
+                            <div>
+                                <div class="font-bold text-slate-200">${char.name}</div>
+                                <div class="text-[10px] text-cyan-400">${char.skill}</div>
+                            </div>
+                        </div>
+                        <select id="playerTypeSelect_${i}" class="bg-slate-900 border border-slate-600 rounded-lg text-xs p-1 text-slate-200">
+                            <option value="human" ${isHumanDefault ? 'selected' : ''}>👤 คน</option>
+                            <option value="bot" ${!isHumanDefault ? 'selected' : ''}>🤖 บอท AI</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1.5 pt-1 border-t border-slate-700/60">
+                        <select id="diceSelect_${i}" class="bg-slate-900 border border-slate-700 rounded p-1 text-[10px]">
+                            ${DICE_THEMES.map(d => `<option value="${d.id}">${d.name}</option>`).join('')}
+                        </select>
+                        <select id="pendantSelect_${i}" class="bg-slate-900 border border-slate-700 rounded p-1 text-[10px]">
+                            ${PENDANT_TYPES.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+                        </select>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        }
+
+        function startGameEngine() {
+            initAudio();
+            gameState.grade = selectedGradeLevel;
+
+            const gradeMap = { 'p4': 'ป.4 (สมการ 1 ขั้น)', 'p5': 'ป.5 (สมการ 2 ขั้น)', 'p6': 'ป.6 (สมการวงเล็บ/สองข้าง)' };
+            document.getElementById('gradeDisplayBadge').innerText = `ระดับชั้น: ${gradeMap[gameState.grade]}`;
+
+            gameState.players = [];
+            for (let i = 0; i < setupPlayerCount; i++) {
+                const char = CHARACTER_PRESETS[i % CHARACTER_PRESETS.length];
+                const typeSelect = document.getElementById(`playerTypeSelect_${i}`);
+                const isBot = typeSelect ? (typeSelect.value === 'bot') : (i !== 0);
+
+                const diceSel = document.getElementById(`diceSelect_${i}`)?.value || 'classic';
+                const pendantSel = document.getElementById(`pendantSelect_${i}`)?.value || 'salary';
+
+                gameState.players.push({
+                    id: i,
+                    name: char.name,
+                    avatar: char.avatar,
+                    skill: char.skill,
+                    preset: char,
+                    diceTheme: diceSel,
+                    pendant: pendantSel,
+                    isBot: isBot,
+                    cash: 10000,
+                    position: 0,
+                    jailTurns: 0,
+                    escapeCards: 0,
+                    isBankrupt: false,
+                    mathStats: { total: 0, correct: 0 }
+                });
+            }
+
+            gameState.currentPlayerIndex = 0;
+            gameState.roundCount = 1;
+            gameState.boardOwnership = {};
+
+            document.getElementById('setupModal').classList.add('hidden');
+            document.getElementById('playerCountLabel').innerText = gameState.players.length;
+
+            renderBoardTiles();
+            renderPlayerDashboard();
+            updateTurnUI();
+            addLog(`🚀 <strong>เริ่มการแข่งขัน!</strong> ผู้เล่นทั้ง ${gameState.players.length} คน พร้อมออกสำรวจดวงดาวอวกาศ`);
+
+            checkBotTurnTrigger();
+        }
+
+        function renderBoardTiles() {
+            const boardContainer = document.getElementById('boardContainer');
+            const tiles = boardContainer.querySelectorAll('.tile-element');
+            tiles.forEach(t => t.remove());
+
+            BOARD_TILES.forEach(tile => {
+                const tileDiv = document.createElement('div');
+                tileDiv.id = `tile_${tile.id}`;
+                tileDiv.className = `tile-element col-start-${tile.gridPos.col} row-start-${tile.gridPos.row} bg-slate-900/90 border border-slate-700/80 rounded-xl p-1 sm:p-1.5 flex flex-col justify-between items-center text-center relative overflow-hidden transition hover:border-cyan-400 shadow-md`;
+                
+                let colorBanner = '';
+                if (tile.type === 'property' || tile.type === 'tourist') {
+                    colorBanner = `<div class="w-full h-1.5 rounded-full mb-0.5" style="background-color: ${tile.colorGroup}"></div>`;
+                }
+
+                tileDiv.innerHTML = `
+                    ${colorBanner}
+                    <div class="text-xs sm:text-sm my-0.5">${tile.icon}</div>
+                    <div class="font-bold text-[9px] sm:text-[10px] leading-tight text-slate-200">${tile.name}</div>
+                    <div id="tileCostText_${tile.id}" class="text-[9px] text-amber-300 font-semibold mt-0.5">
+                        ${tile.cost ? tile.cost + ' 🪙' : ''}
+                    </div>
+                    <div id="tileOwnerBadge_${tile.id}" class="text-[9px] font-bold text-cyan-300 hidden"></div>
+                    <div id="tileTokens_${tile.id}" class="flex flex-wrap gap-0.5 justify-center items-center mt-0.5 z-10 min-h-[16px]"></div>
+                `;
+
+                boardContainer.appendChild(tileDiv);
+            });
+
+            updatePlayerPositionsUI();
+        }
+
+        function updatePlayerPositionsUI() {
+            BOARD_TILES.forEach(t => {
+                const tokenContainer = document.getElementById(`tileTokens_${t.id}`);
+                if (tokenContainer) tokenContainer.innerHTML = '';
+            });
+
+            gameState.players.forEach(p => {
+                if (p.isBankrupt) return;
+                const container = document.getElementById(`tileTokens_${p.position}`);
+                if (container) {
+                    const token = document.createElement('span');
+                    token.className = "text-xs sm:text-sm player-token transform hover:scale-125 transition";
+                    token.title = p.name;
+                    token.innerText = p.avatar;
+                    container.appendChild(token);
+                }
+            });
+        }
+
+        function renderPlayerDashboard() {
+            const container = document.getElementById('playerListContainer');
+            container.innerHTML = '';
+
+            gameState.players.forEach((p, idx) => {
+                const isCurrent = (idx === gameState.currentPlayerIndex && !p.isBankrupt);
+                const card = document.createElement('div');
+                card.className = `bg-slate-900/90 p-2.5 rounded-xl border ${isCurrent ? 'border-neonCyan active-turn-glow' : 'border-slate-800'} flex items-center justify-between text-xs transition ${p.isBankrupt ? 'opacity-40 grayscale' : ''}`;
+
+                const ownedCount = Object.values(gameState.boardOwnership).filter(o => o.ownerId === p.id).length;
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">${p.avatar}</span>
+                        <div>
+                            <div class="font-bold flex items-center gap-1.5 text-slate-200">
+                                <span>${p.name}</span>
+                                ${p.isBot ? '<span class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">บอท</span>' : '<span class="text-[9px] bg-cyan-950 text-cyan-300 px-1.5 py-0.5 rounded">คน</span>'}
+                                ${p.escapeCards > 0 ? `<span class="text-[9px] text-amber-300 font-normal"><i class="fa-solid fa-ticket"></i> x${p.escapeCards}</span>` : ''}
+                            </div>
+                            <div class="text-[10px] text-slate-400">ดาวที่ครอง: ${ownedCount} เมือง</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        ${p.isBankrupt ? '<span class="text-rose-400 font-bold text-xs">ล้มละลาย ❌</span>' : `<div class="font-bold text-neonYellow text-sm">${p.cash.toLocaleString()} 🪙</div>`}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function updateTurnUI() {
+            const curPlayer = gameState.players[gameState.currentPlayerIndex];
+            document.getElementById('turnAvatar').innerText = curPlayer.avatar;
+            document.getElementById('turnPlayerName').innerText = curPlayer.name + (curPlayer.isBot ? ' (บอท)' : '');
+            document.getElementById('turnSkillBadge').innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> สกิล: ${curPlayer.skill}`;
+            document.getElementById('currentRoundText').innerText = gameState.roundCount;
+
+            // Apply player selected dice style
+            const d1 = document.getElementById('dice1');
+            const d2 = document.getElementById('dice2');
+            const diceThemeObj = DICE_THEMES.find(d => d.id === curPlayer.diceTheme) || DICE_THEMES[0];
+            d1.className = diceThemeObj.class;
+            d2.className = diceThemeObj.class;
+
+            const rollBtn = document.getElementById('rollDiceBtn');
+            if (curPlayer.isBot) {
+                rollBtn.disabled = true;
+                rollBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                rollBtn.disabled = false;
+                rollBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+
+            renderPlayerDashboard();
+        }
+
+        function addLog(msg) {
+            const logContainer = document.getElementById('gameLog');
+            const entry = document.createElement('div');
+            entry.className = 'text-slate-300 leading-snug border-b border-slate-800/50 pb-1 text-[11px]';
+            entry.innerHTML = msg;
+            logContainer.prepend(entry);
+        }
+
+        // DICE ROLL & MOVEMENT LOGIC
+        function humanRollDice() {
+            const curPlayer = gameState.players[gameState.currentPlayerIndex];
+            if (curPlayer.isBot || gameState.isRolling) return;
+            executeDiceRoll();
+        }
+
+        function executeDiceRoll() {
+            if (gameState.isRolling) return;
+            gameState.isRolling = true;
+            playSound('roll');
+
+            const curPlayer = gameState.players[gameState.currentPlayerIndex];
+
+            // Black Hole Check
+            if (curPlayer.jailTurns > 0) {
+                gameState.isRolling = false;
+                if (curPlayer.isBot) {
+                    // Bot choices
+                    if (curPlayer.escapeCards > 0) {
+                        handleBlackHoleChoice('card');
+                    } else if (curPlayer.cash >= 2000) {
+                        handleBlackHoleChoice('pay');
+                    } else {
+                        handleBlackHoleChoice('double');
+                    }
+                } else {
+                    document.getElementById('blackHoleStatusText').innerText = `ติดอยู่ในหลุมดำอวกาศอีก ${curPlayer.jailTurns} ตา เลือกวิธีออกจากหลุมดำ:`;
+                    document.getElementById('escapeCardCountBadge').innerText = `มี ${curPlayer.escapeCards} ใบ`;
+                    document.getElementById('blackHoleModal').classList.remove('hidden');
+                }
+                return;
+            }
+
+            const dice1El = document.getElementById('dice1');
+            const dice2El = document.getElementById('dice2');
+            dice1El.classList.add('rolling');
+            dice2El.classList.add('rolling');
+
+            setTimeout(() => {
+                const d1 = getRandomInt(1, 6);
+                const d2 = getRandomInt(1, 6);
+                const totalMove = d1 + d2;
+                const isDouble = (d1 === d2);
+
+                dice1El.classList.remove('rolling');
+                dice2El.classList.remove('rolling');
+                dice1El.innerText = d1;
+                dice2El.innerText = d2;
+
+                document.getElementById('diceSumText').innerText = `ทอยได้ ${d1} + ${d2} = ${totalMove} ช่อง! ${isDouble ? '🎲 (ทอยได้เบิ้ล!)' : ''}`;
+
+                if (isDouble && curPlayer.preset.doubleBonus) {
+                    curPlayer.cash += curPlayer.preset.doubleBonus;
+                    playSound('cash');
+                    addLog(`🌟 <strong>${curPlayer.name}</strong> ทอยได้เบิ้ล! ได้รับโบนัส +${curPlayer.preset.doubleBonus} 🪙`);
+                }
+
+                addLog(`🎲 <strong>${curPlayer.name}</strong> ทอยลูกเต๋าได้ ${d1} และ ${d2} (รวม ${totalMove} ช่อง)`);
+
+                movePlayerSteps(curPlayer, totalMove, isDouble);
+            }, 500);
+        }
+
+        function handleBlackHoleChoice(choiceType) {
+            document.getElementById('blackHoleModal').classList.add('hidden');
+            const curPlayer = gameState.players[gameState.currentPlayerIndex];
+
+            if (choiceType === 'card' && curPlayer.escapeCards > 0) {
+                curPlayer.escapeCards--;
+                curPlayer.jailTurns = 0;
+                addLog(`🎟️ <strong>${curPlayer.name}</strong> ใช้การ์ดหนีหลุมดำ! หลุดพ้นทันที`);
+                executeDiceRoll();
+            } else if (choiceType === 'pay' && curPlayer.cash >= 1000) {
+                curPlayer.cash -= 1000;
+                curPlayer.jailTurns = 0;
+                playSound('cash');
+                addLog(`💳 <strong>${curPlayer.name}</strong> จ่ายค่าปรับ 1,000 🪙 หลุดพ้นจากหลุมดำ!`);
+                executeDiceRoll();
+            } else { // double
+                const d1 = getRandomInt(1, 6);
+                const d2 = getRandomInt(1, 6);
+                document.getElementById('dice1').innerText = d1;
+                document.getElementById('dice2').innerText = d2;
+
+                if (d1 === d2) {
+                    curPlayer.jailTurns = 0;
+                    addLog(`✨ <strong>${curPlayer.name}</strong> ทอยได้เบิ้ล (${d1}, ${d2})! หลุดพ้นจากหลุมดำสำเร็จ!`);
+                    movePlayerSteps(curPlayer, d1 + d2, false);
+                } else {
+                    curPlayer.jailTurns--;
+                    addLog(`🕳️ <strong>${curPlayer.name}</strong> ทอยได้ (${d1}, ${d2}) ไม่เบิ้ล! ยังคงติดในหลุมดำ (เหลืออีก ${curPlayer.jailTurns} ตา)`);
+                    endTurnRotation();
+                }
+            }
+        }
+
+        function movePlayerSteps(player, steps, isDouble) {
+            let currentStep = 0;
+            const moveInterval = setInterval(() => {
+                player.position = (player.position + 1) % BOARD_TILES.length;
+                
+                // Passed Start bonus
+                if (player.position === 0) {
+                    let salary = 2000;
+                    if (player.preset.salaryBonus) salary = Math.round(salary * (1 + player.preset.salaryBonus));
+                    if (player.pendant === 'salary') salary = Math.round(salary * 1.1);
+                    player.cash += salary;
+                    playSound('cash');
+                    addLog(`💵 <strong>${player.name}</strong> เดินผ่านจุดเริ่มต้น ได้รับเงินเดือน +${salary.toLocaleString()} 🪙`);
+                }
+
+                updatePlayerPositionsUI();
+                currentStep++;
+
+                if (currentStep >= steps) {
+                    clearInterval(moveInterval);
+                    gameState.isRolling = false;
+                    handleTileLanding(player, player.position, isDouble);
+                }
+            }, 200);
+        }
+
+        // TILE LANDING EVENT ROUTER
+        function handleTileLanding(player, tileId, isDouble = false) {
+            const tile = BOARD_TILES[tileId];
+            addLog(`📍 <strong>${player.name}</strong> ตกที่ช่อง [${tile.name}]`);
+
+            if (tile.type === 'start') {
+                let salary = 2000;
+                player.cash += salary;
+                playSound('cash');
+                addLog(`🏛️ <strong>${player.name}</strong> ตกลงบนช่องจุดเริ่มต้น พอดี! รับโบนัสพิเศษ +${salary.toLocaleString()} 🪙`);
+                finalizeTurn(isDouble);
+            } else if (tile.type === 'start_bonus') {
+                player.cash += 1500;
+                playSound('cash');
+                addLog(`🏛️ <strong>${player.name}</strong> ตกช่องศูนย์บัญชาการ ได้รับเงินสนับสนุน +1,500 🪙`);
+                finalizeTurn(isDouble);
+            } else if (tile.type === 'jail') {
+                if (player.preset.luckyJail && Math.random() < 0.5) {
+                    addLog(`🐰 สกิลกระต่ายอวกาศทำงาน! <strong>${player.name}</strong> หลบหลุมดำสำเร็จ!`);
+                } else {
+                    player.jailTurns = 3;
+                    addLog(`🕳️ <strong>${player.name}</strong> ถูกดูดเข้าสู่หลุมดำ! ติดอยู่ 3 ตา`);
+                }
+                endTurnRotation();
+            } else if (tile.type === 'warp') {
+                playSound('warp');
+                if (player.isBot) {
+                    // Bot warp target selection
+                    const unowned = BOARD_TILES.filter(t => (t.type === 'property' || t.type === 'tourist') && !gameState.boardOwnership[t.id]);
+                    const target = unowned.length > 0 ? unowned[0].id : getRandomInt(0, 19);
+                    addLog(`🌀 <strong>${player.name} (บอท)</strong> เลือกวาร์ปไปช่อง [${BOARD_TILES[target].name}]`);
+                    
+                    if (target < player.position) {
+                        player.cash += 2000; // Passed Start
+                    }
+                    player.position = target;
+                    updatePlayerPositionsUI();
+                    handleTileLanding(player, target, false);
+                } else {
+                    openWarpModal(player);
+                }
+            } else if (tile.type === 'tax') {
+                const taxAmount = Math.max(1500, Math.round(player.cash * 0.10));
+                player.cash -= taxAmount;
+                addLog(`💳 <strong>${player.name}</strong> จ่ายภาษีอวกาศ -${taxAmount.toLocaleString()} 🪙`);
+                checkBankruptcyOrVictory();
+                finalizeTurn(isDouble);
+            } else if (tile.type === 'chance') {
+                handleChanceCard(player, isDouble);
+            } else if (tile.type === 'property' || tile.type === 'tourist') {
+                handlePropertyLanding(player, tile, isDouble);
+            }
+        }
+
+        function handleChanceCard(player, isDouble) {
+            const chanceEvents = [
+                { text: "ได้รับทุนสนับสนุนจากสถาบันอวกาศ! +1,500 🪙", cash: 1500 },
+                { text: "พายุสุริยะพัดยานเสียหาย! จ่ายค่าซ่อม -1,000 🪙", cash: -1000 },
+                { text: "ได้รับการ์ดหนีหลุมดำ 1 ใบ! 🎟️", escapeCard: true },
+                { text: "ลมสุริยะช่วยส่งเสริม! เดินหน้าเพิ่ม 3 ช่อง 🚀", moveStep: 3 },
+                { text: "พบเศษอุกกาบาตขวางทาง! ถอยหลัง 2 ช่อง 🪐", moveStep: -2 },
+                { text: "ไอพ่นวาร์ปทำงานผิดพลาด! ถูกส่งไปหลุมดำ 🕳️", sendJail: true }
+            ];
+
+            const ev = chanceEvents[getRandomInt(0, chanceEvents.length - 1)];
+
+            if (player.isBot) {
+                addLog(`🎁 <strong>การ์ดดวงอวกาศ (บอท):</strong> ${ev.text}`);
+                applyChanceEffect(player, ev, isDouble);
+            } else {
+                document.getElementById('chanceCardText').innerText = ev.text;
+                document.getElementById('chanceModal').classList.remove('hidden');
+                gameState.pendingChanceEv = { player, ev, isDouble };
+            }
+        }
+
+        function closeChanceModal() {
+            document.getElementById('chanceModal').classList.add('hidden');
+            if (gameState.pendingChanceEv) {
+                const { player, ev, isDouble } = gameState.pendingChanceEv;
+                applyChanceEffect(player, ev, isDouble);
+                gameState.pendingChanceEv = null;
+            }
+        }
+
+        function applyChanceEffect(player, ev, isDouble) {
+            if (ev.cash) {
+                player.cash += ev.cash;
+                if (ev.cash > 0) playSound('cash');
+            }
+            if (ev.escapeCard) {
+                player.escapeCards++;
+                playSound('cash');
+            }
+            if (ev.sendJail) {
+                player.position = 5;
+                player.jailTurns = 3;
+                updatePlayerPositionsUI();
+                endTurnRotation();
+                return;
+            }
+            if (ev.moveStep) {
+                player.position = (player.position + ev.moveStep + BOARD_TILES.length) % BOARD_TILES.length;
+                updatePlayerPositionsUI();
+                handleTileLanding(player, player.position, false);
+                return;
+            }
+
+            checkBankruptcyOrVictory();
+            finalizeTurn(isDouble);
+        }
+
+        // PROPERTY & TAKEOVER ENGINE
+        function handlePropertyLanding(player, tile, isDouble) {
+            const ownership = gameState.boardOwnership[tile.id];
+
+            if (!ownership) {
+                // Buy Unowned Property
+                let cost = tile.cost;
+                if (player.pendant === 'discount') cost = Math.round(cost * 0.9);
+
+                promptEquationChallenge(player, `ซื้อ [${tile.name}] ราคา ${cost.toLocaleString()} 🪙`, (success) => {
+                    if (success) {
+                        if (player.cash >= cost) {
+                            player.cash -= cost;
+                            gameState.boardOwnership[tile.id] = { ownerId: player.id, level: 1 };
+                            updateTileVisuals(tile.id);
+                            playSound('cash');
+                            addLog(`🏛️ <strong>${player.name}</strong> แก้สมการถูกต้อง และซื้อ [${tile.name}] ขั้นที่ 1 สำเร็จ!`);
+                        } else {
+                            addLog(`❌ <strong>${player.name}</strong> แก้สมการถูก แต่เงินสดไม่พอซื้อเมือง`);
+                        }
+                    }
+                    finalizeTurn(isDouble);
+                });
+            } else if (ownership.ownerId === player.id) {
+                // Upgrade Owned Property
+                if (ownership.level < 4) {
+                    let upgradeCost = Math.round(tile.cost * 0.8);
+                    if (player.preset.upgradeDiscount) upgradeCost = Math.round(upgradeCost * (1 - player.preset.upgradeDiscount));
+
+                    const levelNames = ['', 'ฐานสำรวจ', 'สถานีอวกาศ', 'นครอวกาศ', 'แลนด์มาร์ก'];
+                    const nextLevelName = levelNames[ownership.level + 1];
+
+                    promptEquationChallenge(player, `อัปเกรด [${tile.name}] เป็น ${nextLevelName} (${upgradeCost.toLocaleString()} 🪙)`, (success) => {
+                        if (success) {
+                            if (player.cash >= upgradeCost) {
+                                player.cash -= upgradeCost;
+                                ownership.level++;
+                                updateTileVisuals(tile.id);
+                                playSound('cash');
+                                addLog(`🌟 <strong>${player.name}</strong> อัปเกรด [${tile.name}] เป็นขั้น ${ownership.level} (${nextLevelName}) สำเร็จ!`);
+                            } else {
+                                addLog(`❌ <strong>${player.name}</strong> เงินสดไม่พอสำหรับการอัปเกรด`);
+                            }
+                        }
+                        finalizeTurn(isDouble);
+                    });
+                } else {
+                    addLog(`🏰 <strong>${player.name}</strong> ตกแลนด์มาร์กของตัวเอง (ระดับสูงสุดแล้ว)`);
+                    finalizeTurn(isDouble);
+                }
+            } else {
+                // Pay Toll & Takeover Option
+                const owner = gameState.players.find(p => p.id === ownership.ownerId);
+                let toll = tile.baseToll * ownership.level;
+
+                if (tile.type === 'property' && checkColorMonopoly(owner.id, tile.group)) {
+                    toll *= 2;
+                    addLog(`🔥 <strong>Color Monopoly!</strong> ค่าผ่านทาง [${tile.name}] เพิ่มเป็น 2 เท่า!`);
+                }
+
+                if (player.preset.tollDiscount || player.pendant === 'shield') {
+                    toll = Math.round(toll * 0.85);
+                }
+
+                player.cash -= toll;
+                owner.cash += toll;
+                playSound('cash');
+                addLog(`💸 <strong>${player.name}</strong> จ่ายค่าผ่านทาง -${toll.toLocaleString()} 🪙 ให้แก่ <strong>${owner.name}</strong>`);
+
+                checkBankruptcyOrVictory();
+
+                // Takeover Choice (If not Landmark Level 4)
+                if (ownership.level < 4 && !player.isBankrupt && player.cash >= tile.cost * 2) {
+                    const takeoverCost = tile.cost * 2;
+                    promptEquationChallenge(player, `ซื้อกิจการต่อ [${tile.name}] จาก ${owner.name} (${takeoverCost.toLocaleString()} 🪙)`, (success) => {
+                        if (success) {
+                            player.cash -= takeoverCost;
+                            owner.cash += Math.round(takeoverCost * 0.8);
+                            ownership.ownerId = player.id;
+                            updateTileVisuals(tile.id);
+                            playSound('cash');
+                            addLog(`⚔️ <strong>${player.name}</strong> แก้สมการผ่าน และเทคโอเวอร์ซื้อเมือง [${tile.name}] สำเร็จ!`);
+                        }
+                        finalizeTurn(isDouble);
+                    });
+                } else {
+                    finalizeTurn(isDouble);
+                }
+            }
+        }
+
+        function updateTileVisuals(tileId) {
+            const ownership = gameState.boardOwnership[tileId];
+            const ownerBadge = document.getElementById(`tileOwnerBadge_${tileId}`);
+            if (!ownership || !ownerBadge) return;
+
+            const owner = gameState.players.find(p => p.id === ownership.ownerId);
+            const levelIcons = ['', '⛺', '🛰️', '🏙️', '🏰'];
+
+            ownerBadge.innerHTML = `${owner.avatar} ${levelIcons[ownership.level]}`;
+            ownerBadge.classList.remove('hidden');
+            renderPlayerDashboard();
+        }
+
+        function checkColorMonopoly(ownerId, group) {
+            const groupTiles = BOARD_TILES.filter(t => t.group === group);
+            return groupTiles.every(t => gameState.boardOwnership[t.id] && gameState.boardOwnership[t.id].ownerId === ownerId);
+        }
+
+        // EQUATION MODAL HANDLER
+        function promptEquationChallenge(player, actionTitle, callback) {
+            gameState.pendingEquationCallback = callback;
+            player.mathStats.total++;
+
+            const eq = generateEquation(gameState.grade);
+
+            if (player.isBot) {
+                addLog(`🤖 <strong>${player.name} (บอท)</strong> กำลังคิดแก้สมการ: ${eq.questionText}...`);
+                const accuracyRate = (gameState.grade === 'p4') ? 0.88 : (gameState.grade === 'p5' ? 0.82 : 0.78);
+                const botIsCorrect = (Math.random() < accuracyRate);
+
+                setTimeout(() => {
+                    if (botIsCorrect) {
+                        player.mathStats.correct++;
+                        let mathBonus = 500;
+                        if (player.preset.mathBonus || player.pendant === 'math') mathBonus += 200;
+                        player.cash += mathBonus;
+                        callback(true);
+                    } else {
+                        addLog(`❌ <strong>${player.name} (บอท)</strong> ตอบสมการผิด!`);
+                        callback(false);
+                    }
+                }, gameState.autoBotSpeed === 'fast' ? 300 : 1000);
+                return;
+            }
+
+            // Human player equation UI
+            document.getElementById('eqPlayerAvatar').innerText = player.avatar;
+            document.getElementById('eqPlayerName').innerText = player.name;
+            document.getElementById('eqActionTypeTitle').innerText = actionTitle;
+            document.getElementById('equationQuestionText').innerText = eq.questionText;
+
+            const optionsGrid = document.getElementById('equationOptionsGrid');
+            optionsGrid.innerHTML = '';
+            document.getElementById('equationExplanationBox').classList.add('hidden');
+
+            eq.options.forEach(optVal => {
+                const btn = document.createElement('button');
+                btn.className = "p-3.5 bg-slate-800 hover:bg-cyan-600/40 border border-slate-600 hover:border-cyan-400 rounded-xl text-lg sm:text-2xl font-black text-slate-100 transition shadow active:scale-95";
+                btn.innerText = optVal;
+                btn.onclick = () => submitHumanAnswer(optVal, eq.correctAnswer, eq.steps, player);
+                optionsGrid.appendChild(btn);
+            });
+
+            document.getElementById('equationModal').classList.remove('hidden');
+        }
+
+        function submitHumanAnswer(chosenVal, correctVal, steps, player) {
+            const optionsGrid = document.getElementById('equationOptionsGrid');
+            optionsGrid.querySelectorAll('button').forEach(b => b.disabled = true);
+
+            if (chosenVal === correctVal) {
+                player.mathStats.correct++;
+                playSound('correct');
+                let mathBonus = 500;
+                if (player.preset.mathBonus || player.pendant === 'math') mathBonus += 200;
+                player.cash += mathBonus;
+                addLog(`✅ <strong>${player.name}</strong> ตอบสมการถูกต้อง! ได้รับโบนัส +${mathBonus} 🪙`);
+
+                document.getElementById('equationModal').classList.add('hidden');
+                if (gameState.pendingEquationCallback) gameState.pendingEquationCallback(true);
+            } else {
+                playSound('wrong');
+                const stepsContainer = document.getElementById('explanationStepsContainer');
+                stepsContainer.innerHTML = '';
+                steps.forEach(st => {
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = 'text-xs text-rose-200 flex items-center gap-2';
+                    stepDiv.innerHTML = `<i class="fa-solid fa-arrow-right text-cyan-400"></i> ${st}`;
+                    stepsContainer.appendChild(stepDiv);
+                });
+
+                document.getElementById('equationExplanationBox').classList.remove('hidden');
+            }
+        }
+
+        function closeEquationModalAndContinue() {
+            document.getElementById('equationModal').classList.add('hidden');
+            if (gameState.pendingEquationCallback) gameState.pendingEquationCallback(false);
+        }
+
+        function openWarpModal(player) {
+            const grid = document.getElementById('warpTilesGrid');
+            grid.innerHTML = '';
+
+            BOARD_TILES.forEach(t => {
+                const btn = document.createElement('button');
+                btn.className = "p-2.5 bg-slate-800 hover:bg-pink-600/40 border border-slate-600 rounded-xl text-xs font-semibold text-slate-200 transition flex flex-col items-center gap-1";
+                btn.innerHTML = `<span class="text-xl">${t.icon}</span> <span>${t.name}</span>`;
+                btn.onclick = () => {
+                    document.getElementById('warpModal').classList.add('hidden');
+                    addLog(`🌀 <strong>${player.name}</strong> เลือกวาร์ปไปช่อง [${t.name}]`);
+                    
+                    if (t.id < player.position) {
+                        player.cash += 2000; // Passed Start
+                    }
+                    player.position = t.id;
+                    updatePlayerPositionsUI();
+                    handleTileLanding(player, t.id, false);
+                };
+                grid.appendChild(btn);
+            });
+
+            document.getElementById('warpModal').classList.remove('hidden');
+        }
+
+        function finalizeTurn(isDouble) {
+            if (isDouble) {
+                addLog(`🎲 <strong>${gameState.players[gameState.currentPlayerIndex].name}</strong> ได้สิทธิ์ทอยต่อจากการทอยเบิ้ล!`);
+                gameState.isRolling = false;
+                checkBotTurnTrigger();
+            } else {
+                endTurnRotation();
+            }
+        }
+
+        // TURN ROTATION & VICTORY EVALUATOR
+        function endTurnRotation() {
+            checkBankruptcyOrVictory();
+
+            let activeCount = gameState.players.filter(p => !p.isBankrupt).length;
+            if (activeCount <= 1) return;
+
+            do {
+                gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+                if (gameState.currentPlayerIndex === 0) {
+                    gameState.roundCount++;
+                }
+            } while (gameState.players[gameState.currentPlayerIndex].isBankrupt);
+
+            if (gameState.roundCount > gameState.maxRounds) {
+                triggerVictorySummary('Max Rounds Completed (ครบรอบสูงสุดการแข่งขัน)');
+                return;
+            }
+
+            updateTurnUI();
+            checkBotTurnTrigger();
+        }
+
+        function checkBotTurnTrigger() {
+            const curPlayer = gameState.players[gameState.currentPlayerIndex];
+            if (curPlayer.isBot && !curPlayer.isBankrupt) {
+                const delay = gameState.autoBotSpeed === 'fast' ? 300 : 900;
+                setTimeout(() => {
+                    executeDiceRoll();
+                }, delay);
+            }
+        }
+
+        function toggleAutoBotSpeed() {
+            if (gameState.autoBotSpeed === 'normal') {
+                gameState.autoBotSpeed = 'fast';
+                document.getElementById('autoBotStatusText').innerText = 'เร็ว ⚡';
+            } else {
+                gameState.autoBotSpeed = 'normal';
+                document.getElementById('autoBotStatusText').innerText = 'ปกติ';
+            }
+        }
+
+        function checkBankruptcyOrVictory() {
+            gameState.players.forEach(p => {
+                if (!p.isBankrupt && p.cash < 0) {
+                    p.isBankrupt = true;
+                    addLog(`💥 <strong>${p.name}</strong> ล้มละลายออกจากเกม!`);
+                    
+                    Object.keys(gameState.boardOwnership).forEach(tid => {
+                        if (gameState.boardOwnership[tid].ownerId === p.id) {
+                            delete gameState.boardOwnership[tid];
+                            const badge = document.getElementById(`tileOwnerBadge_${tid}`);
+                            if (badge) badge.classList.add('hidden');
+                        }
+                    });
+                }
+            });
+
+            const activePlayers = gameState.players.filter(p => !p.isBankrupt);
+
+            // 1. Bankruptcy Victory
+            if (activePlayers.length === 1) {
+                triggerVictorySummary(`Bankruptcy Victory (คู่แข่งล้มละลายหมด)`);
+                return;
+            }
+
+            // Check special victory conditions
+            activePlayers.forEach(p => {
+                // 2. Tourist Victory (All 3 tourist spots)
+                const touristTiles = BOARD_TILES.filter(t => t.type === 'tourist');
+                const pTouristCount = touristTiles.filter(t => gameState.boardOwnership[t.id] && gameState.boardOwnership[t.id].ownerId === p.id).length;
+                if (pTouristCount === 3) {
+                    triggerVictorySummary(`Tourist Victory! (ครอบครองสถานที่ท่องเที่ยวอวกาศครบ 3 แห่ง)`);
+                    return;
+                }
+
+                // 3. Triple Victory (3 complete color groups)
+                const groups = ['red', 'orange', 'yellow', 'green', 'purple'];
+                let ownedGroupsCount = 0;
+                groups.forEach(g => {
+                    if (checkColorMonopoly(p.id, g)) ownedGroupsCount++;
+                });
+                if (ownedGroupsCount >= 3) {
+                    triggerVictorySummary(`Triple Victory! (ครอบครองครบ 3 กลุ่มสี)`);
+                    return;
+                }
+
+                // 4. Line Victory (All properties in 1 row)
+                const lines = [
+                    [1, 2, 4], // Top line
+                    [6, 8],    // Right line
+                    [11, 12],  // Bottom line
+                    [16, 19]   // Left line
+                ];
+                lines.forEach(line => {
+                    if (line.every(tid => gameState.boardOwnership[tid] && gameState.boardOwnership[tid].ownerId === p.id)) {
+                        triggerVictorySummary(`Line Victory! (ครอบครองครบทุกช่องในแถว)`);
+                        return;
+                    }
+                });
+            });
+        }
+
+        function triggerVictorySummary(reason) {
+            document.getElementById('victoryReasonText').innerText = `เงื่อนไขชัยชนะ: ${reason}`;
+
+            const ranked = [...gameState.players].map(p => {
+                let assetsValue = 0;
+                Object.keys(gameState.boardOwnership).forEach(tid => {
+                    const own = gameState.boardOwnership[tid];
+                    if (own.ownerId === p.id) {
+                        const tile = BOARD_TILES[tid];
+                        assetsValue += tile.cost * own.level;
+                    }
+                });
+                return {
+                    ...p,
+                    netWorth: p.cash + assetsValue,
+                    accuracy: p.mathStats.total > 0 ? Math.round((p.mathStats.correct / p.mathStats.total) * 100) : 0
+                };
+            }).sort((a, b) => b.netWorth - a.netWorth);
+
+            const winner = ranked[0];
+            document.getElementById('winnerAvatar').innerText = winner.avatar;
+            document.getElementById('winnerName').innerText = winner.name;
+            document.getElementById('winnerNetWorth').innerText = `มูลค่าทรัพย์สินรวม: ${winner.netWorth.toLocaleString()} 🪙`;
+
+            const tbody = document.getElementById('summaryTableBody');
+            tbody.innerHTML = '';
+            ranked.forEach((p, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-800 text-slate-200";
+                tr.innerHTML = `
+                    <td class="p-2 font-bold text-amber-400">#${idx + 1}</td>
+                    <td class="p-2 font-bold flex items-center gap-1.5"><span>${p.avatar}</span> <span>${p.name}</span></td>
+                    <td class="p-2 text-neonYellow font-mono">${p.cash.toLocaleString()} 🪙</td>
+                    <td class="p-2 text-cyan-300 font-bold">${Object.values(gameState.boardOwnership).filter(o => o.ownerId === p.id).length} ช่อง</td>
+                    <td class="p-2 text-emerald-400 font-bold">${p.accuracy}% (${p.mathStats.correct}/${p.mathStats.total})</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('summaryModal').classList.remove('hidden');
+        }
+
+        function openRulebookModal() {
+            document.getElementById('rulebookModal').classList.remove('hidden');
+        }
+
+        function closeRulebookModal() {
+            document.getElementById('rulebookModal').classList.add('hidden');
+        }
+
+        function confirmRestartGame() {
+            if (confirm("คุณต้องการเริ่มเกมใหม่ใช่หรือไม่?")) {
+                location.reload();
+            }
+        }
+
+        window.onload = function() {
+            renderSetupPlayerList();
+            selectGrade('p4');
+        };
+    </script>
 </body>
 </html>
