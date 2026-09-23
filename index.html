@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เศรษฐีอวกาศ: ยอดนักแก้สมการ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --board-bg: #1f2833;
+            --text-main: #66fcf1;
+            --text-dark: #c5c6c7;
+            --btn-color: #45a29e;
+            --btn-hover: #66fcf1;
+            --p1: #ff4757; --p2: #1e90ff; --p3: #2ed573;
+            --p4: #ffa502; --p5: #9b59b6; --p6: #ff6b81;
+        }
+        * { box-sizing: border-box; font-family: 'Kanit', sans-serif; user-select: none; }
+        body { margin: 0; background-color: var(--bg-color); color: white; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; background-image: radial-gradient(circle at center, #1f2833 0%, #0b0c10 100%); }
+        
+        /* สกรีนเริ่มเกม */
+        #start-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px; z-index: 10; }
+        h1 { font-size: 3rem; color: var(--text-main); text-shadow: 0 0 10px var(--text-main); margin-bottom: 10px; }
+        .instructions { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; max-width: 600px; margin-bottom: 30px; font-size: 1.1rem; line-height: 1.6; border: 1px solid var(--btn-color); }
+        .controls { display: flex; gap: 15px; margin-bottom: 30px; align-items: center; }
+        select { font-size: 1.5rem; padding: 10px; border-radius: 10px; background: var(--board-bg); color: white; border: 2px solid var(--btn-color); }
+        button { font-size: 1.5rem; padding: 15px 40px; border-radius: 50px; background: var(--btn-color); color: white; border: none; cursor: pointer; transition: 0.3s; font-weight: bold; box-shadow: 0 4px 15px rgba(102, 252, 241, 0.4); }
+        button:hover { background: var(--btn-hover); color: var(--bg-color); transform: scale(1.05); }
+
+        /* สกรีนหลักเกม */
+        #game-screen { display: none; width: 100%; max-width: 1000px; padding: 10px; flex-direction: column; align-items: center; }
+        
+        /* กระดานเกม 30 ช่อง (Grid 9x8) */
+        .board { display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(8, 1fr); gap: 4px; width: 100%; aspect-ratio: 9/8; background: var(--board-bg); padding: 5px; border-radius: 10px; border: 2px solid var(--btn-color); position: relative; }
+        .cell { background: rgba(255,255,255,0.05); border: 1px solid rgba(102, 252, 241, 0.3); border-radius: 5px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 0.8rem; overflow: hidden; transition: 0.2s; }
+        .cell.corner { background: rgba(69, 162, 158, 0.2); font-weight: bold; }
+        .cell-name { font-size: 0.85rem; font-weight: bold; margin-bottom: 2px; z-index: 2; line-height: 1; padding: 0 2px;}
+        .cell-price { font-size: 0.7rem; color: #f1c40f; z-index: 2;}
+        .cell-owner-bar { position: absolute; top: 0; left: 0; width: 100%; height: 5px; }
+        .cell-level { font-size: 0.6rem; color: white; margin-top: 2px; z-index: 2;}
+        
+        /* ตัวละครผู้เล่นบนบอร์ด */
+        .players-container { position: absolute; bottom: 2px; left: 2px; display: flex; flex-wrap: wrap; gap: 2px; z-index: 5; }
+        .token { width: 15px; height: 15px; border-radius: 50%; border: 1px solid white; box-shadow: 0 0 5px black; transition: all 0.4s ease; }
+        .festival-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem; opacity: 0.3; pointer-events: none; }
+
+        /* แผงควบคุมตรงกลางกระดาน */
+        .center-panel { grid-column: 2 / 9; grid-row: 2 / 8; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); border-radius: 10px; padding: 10px; }
+        .status-board { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 15px; width: 100%; }
+        .player-card { background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 8px; border-left: 5px solid white; min-width: 100px; text-align: center; }
+        .player-card.active { transform: scale(1.1); box-shadow: 0 0 10px white; background: rgba(255,255,255,0.2); }
+        .player-card.bankrupt { opacity: 0.3; text-decoration: line-through; }
+        
+        .dice-area { font-size: 3rem; margin: 10px 0; display: flex; gap: 15px; }
+        .dice { background: white; color: black; width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        
+        .log-area { width: 90%; height: 60px; overflow-y: auto; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 5px; font-size: 0.9rem; color: #ccc; text-align: center; margin-bottom: 10px; }
+
+        /* Modals */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(5px); }
+        .modal { background: var(--board-bg); padding: 30px; border-radius: 20px; text-align: center; max-width: 90%; width: 400px; border: 2px solid var(--btn-color); box-shadow: 0 0 20px var(--btn-color); animation: popIn 0.3s ease; }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .modal h2 { margin-top: 0; color: var(--text-main); }
+        .modal p { font-size: 1.2rem; margin-bottom: 20px; }
+        
+        /* Math Choices */
+        .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .choice-btn { background: #2c3e50; padding: 15px; font-size: 1.5rem; border-radius: 10px; border: 2px solid #34495e; cursor: pointer; transition: 0.2s; color: white; }
+        .choice-btn:hover { background: var(--btn-hover); color: black; }
+        .choice-btn.correct { background: #2ed573; border-color: #2ed573; color: black;}
+        .choice-btn.wrong { background: #ff4757; border-color: #ff4757; }
+
+        .modal-buttons { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .modal-buttons button { padding: 10px 20px; font-size: 1.2rem; }
+        .btn-cancel { background: #ff4757; box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4); }
+        .btn-cancel:hover { background: #ff6b81; }
+
+        /* Media Queries สำหรับมือถือ */
+        @media (max-width: 600px) {
+            .board { grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(8, 1fr); aspect-ratio: auto; height: 60vh; }
+            .cell-name { font-size: 0.6rem; }
+            .cell-price { font-size: 0.5rem; }
+            .center-panel { padding: 5px; }
+            .player-card { min-width: 60px; font-size: 0.7rem; padding: 2px; }
+            button { font-size: 1rem; padding: 10px 20px; }
+            .dice { width: 35px; height: 35px; font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- สกรีนเริ่มเกม -->
+    <div id="start-screen">
+        <h1>🚀 เศรษฐีอวกาศ<br><span style="font-size: 1.5rem; color: #f1c40f;">ยอดนักแก้สมการ</span></h1>
+        <div class="instructions">
+            <b>วิธีเล่น:</b><br>
+            1. ทอยลูกเต๋าเพื่อเดินทางไปตามดวงดาวต่างๆ<br>
+            2. <b>หาคำตอบของสมการให้ถูกต้อง</b> เพื่อซื้อดาวหรืออัปเกรดดาว (สูงสุดขั้น 4 = แลนด์มาร์ก)<br>
+            3. ตกดาวคนอื่นต้องจ่ายค่าผ่านทาง และสามารถ "เทคโอเวอร์" ได้ถ้าดาวนั้นยังไม่ถึงขั้น 4<br>
+            4. <b>เงื่อนไขชนะ:</b> ซื้อดาวเหมาทั้ง 1 แถว (Line Monopoly) หรือทำให้คู่แข่งล้มละลายทั้งหมด!
+        </div>
+        <div class="controls">
+            <label for="player-count">จำนวนผู้เล่น:</label>
+            <select id="player-count">
+                <option value="2">2 คน</option>
+                <option value="3">3 คน</option>
+                <option value="4">4 คน</option>
+            </select>
+        </div>
+        <button onclick="startGame()">เริ่มผจญภัย!</button>
+    </div>
+
+    <!-- สกรีนเกม -->
+    <div id="game-screen">
+        <div class="board" id="board">
+            <!-- สร้างผ่าน JS -->
+            <div class="center-panel">
+                <div class="status-board" id="status-board"></div>
+                <div class="log-area" id="log-area">ยินดีต้อนรับสู่สถานีอวกาศ!</div>
+                <div class="dice-area">
+                    <div class="dice" id="dice1">🎲</div>
+                    <div class="dice" id="dice2">🎲</div>
+                </div>
+                <button id="btn-roll" onclick="rollDice()">ทอยลูกเต๋า</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal ทั่วไป (แจ้งเตือน/ซื้อ/จ่ายเงิน) -->
+    <div class="modal-overlay" id="generic-modal">
+        <div class="modal">
+            <h2 id="gmodal-title">Title</h2>
+            <p id="gmodal-desc">Description</p>
+            <div class="modal-buttons" id="gmodal-buttons"></div>
+        </div>
+    </div>
+
+    <!-- Modal คำถามคณิตศาสตร์ -->
+    <div class="modal-overlay" id="math-modal">
+        <div class="modal">
+            <h2>แก้สมการเพื่อไปต่อ!</h2>
+            <p id="math-question" style="font-size: 2.5rem; font-weight: bold; margin: 10px 0; color: #f1c40f;">x + 5 = 10</p>
+            <p style="font-size: 1rem; color: #aaa;">จงหาค่าของ x</p>
+            <div class="choices" id="math-choices">
+                <!-- ปุ่มสร้างผ่าน JS -->
+            </div>
+            <p id="math-feedback" style="font-size: 1.2rem; font-weight: bold; height: 30px; margin: 0;"></p>
+        </div>
+    </div>
+
+<script>
+    // ข้อมูลเริ่มต้น
+    const colors = ['var(--p1)', 'var(--p2)', 'var(--p3)', 'var(--p4)', 'var(--p5)', 'var(--p6)'];
+    let players = [];
+    let turn = 0;
+    let festivalSpace = -1; // -1 = ไม่มีจัดงาน
+    let isSelectingSpace = false;
+    let selectingCallback = null;
+
+    // โครงสร้างกระดาน 30 ช่อง (เรียงตามเข็มนาฬิกา เริ่มจากมุมขวาล่าง)
+    const boardLayout = [
+        { id: 0, name: "จุดเริ่มต้น", type: "corner", price: 0, grid: "8/9" }, // (row/col)
+        { id: 1, name: "ดาวพุธ", type: "city", price: 10, grid: "8/8" },
+        { id: 2, name: "ดาวศุกร์", type: "city", price: 10, grid: "8/7" },
+        { id: 3, name: "โลก", type: "city", price: 12, grid: "8/6" },
+        { id: 4, name: "การ์ดสุ่ม", type: "card", price: 0, grid: "8/5" },
+        { id: 5, name: "ดวงจันทร์", type: "city", price: 12, grid: "8/4" },
+        { id: 6, name: "ดาวอังคาร", type: "city", price: 15, grid: "8/3" },
+        { id: 7, name: "โฟบอส", type: "city", price: 15, grid: "8/2" },
+        
+        { id: 8, name: "หลุมดำ", type: "corner", price: 0, grid: "8/1" },
+        { id: 9, name: "ดาวพฤหัส", type: "city", price: 18, grid: "7/1" },
+        { id: 10, name: "ไอโอ", type: "city", price: 18, grid: "6/1" },
+        { id: 11, name: "ยูโรปา", type: "city", price: 20, grid: "5/1" },
+        { id: 12, name: "แกนีมีด", type: "city", price: 20, grid: "4/1" },
+        { id: 13, name: "คัลลิสโต", type: "city", price: 22, grid: "3/1" },
+        { id: 14, name: "ดาวเสาร์", type: "city", price: 25, grid: "2/1" },
+        
+        { id: 15, name: "เทศกาล", type: "corner", price: 0, grid: "1/1" },
+        { id: 16, name: "ไททัน", type: "city", price: 25, grid: "1/2" },
+        { id: 17, name: "เอนเซลาดัส", type: "city", price: 28, grid: "1/3" },
+        { id: 18, name: "ดาวยูเรนัส", type: "city", price: 30, grid: "1/4" },
+        { id: 19, name: "การ์ดสุ่ม", type: "card", price: 0, grid: "1/5" },
+        { id: 20, name: "มิแรนดา", type: "city", price: 30, grid: "1/6" },
+        { id: 21, name: "ดาวเนปจูน", type: "city", price: 32, grid: "1/7" },
+        { id: 22, name: "ไทรทัน", type: "city", price: 35, grid: "1/8" },
+        
+        { id: 23, name: "สถานีอวกาศ", type: "corner", price: 0, grid: "1/9" },
+        { id: 24, name: "ดาวพลูโต", type: "city", price: 35, grid: "2/9" },
+        { id: 25, name: "ซิริอุส", type: "city", price: 38, grid: "3/9" },
+        { id: 26, name: "เวก้า", type: "city", price: 38, grid: "4/9" },
+        { id: 27, name: "อัลฟาเซนทอรี", type: "city", price: 40, grid: "5/9" },
+        { id: 28, name: "บีเทลจุส", type: "city", price: 45, grid: "6/9" },
+        { id: 29, name: "ไรเจล", type: "city", price: 50, grid: "7/9" }
+    ];
+
+    let cells = [];
+
+    // กลุ่มแถวเพื่อเช็คชนะ (Line Monopoly)
+    const zones = [
+        [1,2,3,5,6,7],      // ล่าง
+        [9,10,11,12,13,14], // ซ้าย
+        [16,17,18,20,21,22],// บน
+        [24,25,26,27,28,29] // ขวา
+    ];
+
+    function log(msg) {
+        const logger = document.getElementById('log-area');
+        logger.innerHTML = `<div>${msg}</div>` + logger.innerHTML;
+    }
+
+    function startGame() {
+        const count = parseInt(document.getElementById('player-count').value);
+        players = [];
+        for(let i=0; i<count; i++) {
+            players.push({
+                id: i,
+                name: `นักบิน ${i+1}`,
+                color: colors[i],
+                money: 500, // หน่วย K
+                pos: 0,
+                bankrupt: false,
+                skipTurns: 0
+            });
+        }
+        
+        cells = boardLayout.map(b => ({
+            ...b,
+            owner: null,
+            level: 0 // 1, 2, 3, 4 (Landmark)
+        }));
+
+        renderBoard();
+        updateStatus();
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'flex';
+        turn = 0;
+        checkTurn();
+    }
+
+    function renderBoard() {
+        const board = document.getElementById('board');
+        // เก็บ center panel ไว้
+        const center = board.querySelector('.center-panel');
+        board.innerHTML = '';
+        board.appendChild(center);
+
+        cells.forEach(cell => {
+            const div = document.createElement('div');
+            div.className = `cell ${cell.type}`;
+            div.id = `cell-${cell.id}`;
+            const [row, col] = cell.grid.split('/');
+            div.style.gridRow = row;
+            div.style.gridColumn = col;
+
+            if (cell.type === 'corner' || cell.type === 'card') {
+                div.innerHTML = `<div class="cell-name">${cell.name}</div>`;
+                if(cell.id === 0) div.innerHTML += `<div class="cell-price">+20K</div>`;
+            } else {
+                div.innerHTML = `
+                    <div class="cell-owner-bar" id="owner-${cell.id}"></div>
+                    <div class="cell-name">${cell.name}</div>
+                    <div class="cell-price">${cell.price}K</div>
+                    <div class="cell-level" id="level-${cell.id}"></div>
+                `;
+            }
+
+            const playersCont = document.createElement('div');
+            playersCont.className = 'players-container';
+            playersCont.id = `players-${cell.id}`;
+            div.appendChild(playersCont);
+
+            // รองรับการคลิกเมื่อต้องเลือกช่อง
+            div.onclick = () => {
+                if(isSelectingSpace && selectingCallback) {
+                    selectingCallback(cell.id);
+                }
+            };
+
+            board.appendChild(div);
+        });
+
+        renderPlayers();
+    }
+
+    function renderPlayers() {
+        // เคลียร์ตำแหน่งเก่า
+        cells.forEach(c => document.getElementById(`players-${c.id}`).innerHTML = '');
+        
+        players.forEach(p => {
+            if (p.bankrupt) return;
+            const token = document.createElement('div');
+            token.className = 'token';
+            token.style.backgroundColor = p.color;
+            document.getElementById(`players-${p.pos}`).appendChild(token);
+        });
+    }
+
+    function updateStatus() {
+        const sb = document.getElementById('status-board');
+        sb.innerHTML = '';
+        players.forEach((p, idx) => {
+            const card = document.createElement('div');
+            card.className = `player-card ${idx === turn ? 'active' : ''} ${p.bankrupt ? 'bankrupt' : ''}`;
+            card.style.borderColor = p.color;
+            card.innerHTML = `<strong>${p.name}</strong><br>${p.bankrupt ? 'ล้มละลาย' : p.money + 'K'}`;
+            sb.appendChild(card);
+        });
+    }
+
+    function getLevelStars(lvl) {
+        if(lvl === 0) return '';
+        if(lvl === 4) return '👑';
+        return '⭐'.repeat(lvl);
+    }
+
+    function updateCellUI(cellId) {
+        const cell = cells[cellId];
+        if (cell.type !== 'city') return;
+        const ownerBar = document.getElementById(`owner-${cell.id}`);
+        const levelText = document.getElementById(`level-${cell.id}`);
+        const div = document.getElementById(`cell-${cell.id}`);
+        
+        if (cell.owner !== null) {
+            ownerBar.style.backgroundColor = players[cell.owner].color;
+            levelText.innerHTML = getLevelStars(cell.level);
+            // แสดงเทศกาล
+            if(festivalSpace === cell.id) {
+                div.style.boxShadow = `inset 0 0 15px ${players[cell.owner].color}`;
+                if(!div.querySelector('.festival-icon')) {
+                    div.innerHTML += `<div class="festival-icon">🎉</div>`;
+                }
+            } else {
+                div.style.boxShadow = 'none';
+                const f = div.querySelector('.festival-icon');
+                if(f) f.remove();
+            }
+        } else {
+            ownerBar.style.backgroundColor = 'transparent';
+            levelText.innerHTML = '';
+            div.style.boxShadow = 'none';
+        }
+    }
+
+    // Modal Helper
+    function showModal(title, desc, buttons) {
+        return new Promise(resolve => {
+            document.getElementById('gmodal-title').innerText = title;
+            document.getElementById('gmodal-desc').innerHTML = desc;
+            const btnContainer = document.getElementById('gmodal-buttons');
+            btnContainer.innerHTML = '';
+            
+            buttons.forEach(b => {
+                const btn = document.createElement('button');
+                btn.innerText = b.text;
+                if(b.style === 'cancel') btn.className = 'btn-cancel';
+                btn.onclick = () => {
+                    document.getElementById('generic-modal').style.display = 'none';
+                    resolve(b.value);
+                };
+                btnContainer.appendChild(btn);
+            });
+            document.getElementById('generic-modal').style.display = 'flex';
+        });
+    }
+
+    function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    // Math Engine
+    function generateMathQuestion() {
+        const types = [1, 2, 3]; // 1: +, 2: -, 3: *
+        const type = types[Math.floor(Math.random() * types.length)];
+        let x, a, b, qText, expl;
+
+        if (type === 1) { // x + a = b
+            x = Math.floor(Math.random() * 15) + 1;
+            a = Math.floor(Math.random() * 15) + 1;
+            b = x + a;
+            qText = `x + ${a} = ${b}`;
+            expl = `ย้าย ${a} ไปลบ: x = ${b} - ${a} <br>คำตอบคือ ${x}`;
+        } else if (type === 2) { // x - a = b
+            a = Math.floor(Math.random() * 15) + 1;
+            b = Math.floor(Math.random() * 15) + 1;
+            x = a + b;
+            qText = `x - ${a} = ${b}`;
+            expl = `ย้าย ${a} ไปบวก: x = ${b} + ${a} <br>คำตอบคือ ${x}`;
+        } else { // a * x = b
+            a = Math.floor(Math.random() * 8) + 2;
+            x = Math.floor(Math.random() * 10) + 1;
+            b = a * x;
+            qText = `${a} × x = ${b}`;
+            expl = `ย้าย ${a} ไปหาร: x = ${b} ÷ ${a} <br>คำตอบคือ ${x}`;
+        }
+
+        let choices = new Set([x]);
+        while(choices.size < 4) {
+            let fake = x + (Math.floor(Math.random() * 7) - 3);
+            if(fake > 0 && fake !== x) choices.add(fake);
+        }
+        return { q: qText, ans: x, choices: Array.from(choices).sort(()=>Math.random()-0.5), expl };
+    }
+
+    function askMath() {
+        return new Promise(resolve => {
+            const mathData = generateMathQuestion();
+            document.getElementById('math-question').innerText = mathData.q;
+            document.getElementById('math-feedback').innerHTML = '';
+            const choiceBox = document.getElementById('math-choices');
+            choiceBox.innerHTML = '';
+            
+            let answered = false;
+
+            mathData.choices.forEach(c => {
+                const btn = document.createElement('button');
+                btn.className = 'choice-btn';
+                btn.innerText = c;
+                btn.onclick = async () => {
+                    if(answered) return;
+                    answered = true;
+                    if(c === mathData.ans) {
+                        btn.classList.add('correct');
+                        document.getElementById('math-feedback').innerHTML = `<span style="color:#2ed573">ถูกต้อง! เก่งมาก!</span>`;
+                        await wait(1500);
+                        document.getElementById('math-modal').style.display = 'none';
+                        resolve(true);
+                    } else {
+                        btn.classList.add('wrong');
+                        // highlight correct
+                        Array.from(choiceBox.children).forEach(cb => {
+                            if(parseInt(cb.innerText) === mathData.ans) cb.classList.add('correct');
+                        });
+                        document.getElementById('math-feedback').innerHTML = `<span style="color:#ff4757">ผิดครับ!</span><br><span style="font-size:0.9rem;color:#ccc;">${mathData.expl}</span>`;
+                        await wait(3000);
+                        document.getElementById('math-modal').style.display = 'none';
+                        resolve(false);
+                    }
+                };
+                choiceBox.appendChild(btn);
+            });
+            
+            document.getElementById('math-modal').style.display = 'flex';
+        });
+    }
+
+    // Game Logic
+    async function checkTurn() {
+        if(checkWin()) return;
+        const p = players[turn];
+        if (p.bankrupt) {
+            endTurn();
+            return;
+        }
+        if (p.skipTurns > 0) {
+            p.skipTurns--;
+            await showModal("ติดหลุมดำ!", `${p.name} กำลังซ่อมยาน งดเดินตานี้`, [{text: "ตกลง", value: 1}]);
+            endTurn();
+            return;
+        }
+        document.getElementById('btn-roll').disabled = false;
+        updateStatus();
+    }
+
+    async function rollDice() {
+        document.getElementById('btn-roll').disabled = true;
+        const d1 = Math.floor(Math.random() * 6) + 1;
+        const d2 = Math.floor(Math.random() * 6) + 1;
+        const steps = d1 + d2;
+        
+        // อนิเมชั่นลูกเต๋า
+        for(let i=0; i<10; i++) {
+            document.getElementById('dice1').innerText = ['⚀','⚁','⚂','⚃','⚄','⚅'][Math.floor(Math.random()*6)];
+            document.getElementById('dice2').innerText = ['⚀','⚁','⚂','⚃','⚄','⚅'][Math.floor(Math.random()*6)];
+            await wait(100);
+        }
+        document.getElementById('dice1').innerText = ['⚀','⚁','⚂','⚃','⚄','⚅'][d1-1];
+        document.getElementById('dice2').innerText = ['⚀','⚁','⚂','⚃','⚄','⚅'][d2-1];
+        
+        log(`${players[turn].name} ทอยได้ ${steps}`);
+        await movePlayer(steps);
+    }
+
+    async function movePlayer(steps) {
+        const p = players[turn];
+        for(let i=0; i<steps; i++) {
+            p.pos = (p.pos + 1) % 30;
+            if(p.pos === 0) { // ผ่านจุดเริ่มต้น
+                p.money += 20;
+                log(`${p.name} ผ่านจุดเริ่มต้น รับ 20K`);
+                updateStatus();
+            }
+            renderPlayers();
+            await wait(200);
+        }
+        await resolveSpace();
+    }
+
+    async function resolveSpace() {
+        const p = players[turn];
+        const cell = cells[p.pos];
+        
+        if (cell.type === 'corner') {
+            if (cell.id === 8) { // หลุมดำ
+                p.skipTurns = 2;
+                await showModal("หลุมดำ!", `ถูกดูดเข้าหลุมดำ งดเดิน 2 ตา!`, [{text: "เข้าใจแล้ว", value: 1}]);
+            } else if (cell.id === 15) { // เทศกาล
+                await handleFestival(p);
+            } else if (cell.id === 23) { // สถานีอวกาศ
+                await handleSpaceStation(p);
+                return; // resolveSpace จะถูกเรียกใหม่เมื่อวาร์ป
+            }
+        } else if (cell.type === 'card') {
+            await handleCard(p);
+        } else if (cell.type === 'city') {
+            await handleCity(p, cell);
+        }
+        
+        endTurn();
+    }
+
+    async function handleFestival(p) {
+        // หาว่ามีดาวตัวเองไหม
+        const myCities = cells.filter(c => c.owner === p.id);
+        if (myCities.length === 0) {
+            await showModal("งานเทศกาลอวกาศ", "คุณยังไม่มีดาวให้จัดงานเลย!", [{text: "เสียดายจัง", value:1}]);
+            return;
+        }
+        await showModal("งานเทศกาลอวกาศ", "เลือกดาวของคุณ 1 ดวงบนกระดานเพื่อจัดเทศกาล (ค่าผ่านทาง x2)", [{text: "เลือกดาว", value: 1}]);
+        isSelectingSpace = true;
+        
+        const selectedId = await new Promise(resolve => {
+            selectingCallback = (id) => {
+                if(cells[id].owner === p.id) {
+                    isSelectingSpace = false;
+                    resolve(id);
+                }
+            };
+        });
+        
+        festivalSpace = selectedId;
+        log(`${p.name} จัดเทศกาลที่ ${cells[selectedId].name}!`);
+        cells.forEach(c => updateCellUI(c.id)); // update all to clear old festival and set new
+    }
+
+    async function handleSpaceStation(p) {
+        await showModal("สถานีอวกาศ", "เลือกช่องใดก็ได้บนกระดานเพื่อวาร์ปไป!", [{text: "เตรียมวาร์ป", value: 1}]);
+        isSelectingSpace = true;
+        
+        const selectedId = await new Promise(resolve => {
+            selectingCallback = (id) => {
+                isSelectingSpace = false;
+                resolve(id);
+            };
+        });
+        
+        p.pos = selectedId;
+        renderPlayers();
+        log(`${p.name} วาร์ปไปที่ ${cells[selectedId].name}`);
+        await resolveSpace(); // resolve ช่องปลายทาง
+    }
+
+    async function handleCard(p) {
+        const effects = [
+            { t: "+", m: 20, desc: "ค้นพบแร่มีค่า รับเงิน 20K" },
+            { t: "+", m: 50, desc: "ได้รับทุนวิจัยอวกาศ รับเงิน 50K" },
+            { t: "-", m: 20, desc: "ชนอุกกาบาต จ่ายค่าซ่อมยาน 20K" },
+            { t: "-", m: 30, desc: "หลงทางในอวกาศ เสียค่าเชื้อเพลิง 30K" }
+        ];
+        const c = effects[Math.floor(Math.random() * effects.length)];
+        
+        await showModal("การ์ดโอกาส", c.desc, [{text: "ตกลง", value: 1}]);
+        
+        if (c.t === "+") p.money += c.m;
+        else p.money -= c.m;
+        
+        updateStatus();
+        if (p.money < 0) await checkBankruptcy(p, null);
+    }
+
+    async function handleCity(p, cell) {
+        if (cell.owner === null) {
+            // ว่าง ซื้อไหม?
+            const ans = await showModal("ค้นพบดาวใหม่", `ดาว ${cell.name} ว่างอยู่<br>ราคา: ${cell.price}K<br>ต้องการทำโจทย์เพื่อซื้อหรือไม่?`, [
+                {text: "ทำโจทย์ซื้อ", value: 'buy'}, {text: "ผ่าน", value: 'pass', style: 'cancel'}
+            ]);
+            if (ans === 'buy') {
+                if (p.money >= cell.price) {
+                    const mathOk = await askMath();
+                    if (mathOk) {
+                        p.money -= cell.price;
+                        cell.owner = p.id;
+                        cell.level = 1;
+                        log(`${p.name} ซื้อดาว ${cell.name}`);
+                        updateCellUI(cell.id);
+                        updateStatus();
+                    }
+                } else {
+                    await showModal("เงินไม่พอ!", "คุณมีเงินไม่พอซื้อดาวดวงนี้", [{text: "ตกลง", value: 1}]);
+                }
+            }
+        } else if (cell.owner === p.id) {
+            // ของตัวเอง อัปเกรด?
+            if (cell.level < 4) {
+                const ans = await showModal("ดาวของคุณ", `ต้องการอัปเกรด ${cell.name} เป็นขั้น ${cell.level+1} ไหม?<br>ค่าอัปเกรด: ${cell.price}K`, [
+                    {text: "ทำโจทย์อัปเกรด", value: 'upgrade'}, {text: "ผ่าน", value: 'pass', style: 'cancel'}
+                ]);
+                if (ans === 'upgrade') {
+                    if (p.money >= cell.price) {
+                        const mathOk = await askMath();
+                        if (mathOk) {
+                            p.money -= cell.price;
+                            cell.level += 1;
+                            log(`${p.name} อัปเกรด ${cell.name} เป็นขั้น ${cell.level}`);
+                            updateCellUI(cell.id);
+                            updateStatus();
+                        }
+                    } else {
+                        await showModal("เงินไม่พอ!", "คุณมีเงินไม่พออัปเกรด", [{text: "ตกลง", value: 1}]);
+                    }
+                }
+            } else {
+                log(`${p.name} แวะพักที่แลนด์มาร์กของตัวเอง`);
+            }
+        } else {
+            // ของคนอื่น จ่ายค่าผ่านทาง
+            let toll = cell.price * cell.level;
+            if (cell.level === 4) toll = cell.price * 4; // แลนด์มาร์กแพงพิเศษ
+            if (festivalSpace === cell.id) toll *= 2; // งานเทศกาล x2
+            
+            await showModal("จ่ายค่าผ่านทาง!", `ตกดาวของ ${players[cell.owner].name}<br>จ่ายค่าผ่านทาง: ${toll}K`, [{text: "จ่ายเงิน", value: 1}]);
+            
+            p.money -= toll;
+            players[cell.owner].money += toll;
+            updateStatus();
+            
+            if (p.money < 0) {
+                await checkBankruptcy(p, players[cell.owner]);
+                return;
+            }
+
+            // ถ้ายังไม่ล้มละลาย และไม่ใช่แลนด์มาร์ก สามารถซื้อต่อได้ (Takeover)
+            if (cell.level < 4) {
+                const takeoverPrice = cell.price * cell.level * 2;
+                const ans = await showModal("เทคโอเวอร์!", `คุณสามารถยึดดาวดวงนี้ได้ในราคา ${takeoverPrice}K`, [
+                    {text: "ทำโจทย์ยึดดาว!", value: 'takeover'}, {text: "ปล่อยผ่าน", value: 'pass', style: 'cancel'}
+                ]);
+                
+                if (ans === 'takeover') {
+                    if (p.money >= takeoverPrice) {
+                        const mathOk = await askMath();
+                        if (mathOk) {
+                            p.money -= takeoverPrice;
+                            players[cell.owner].money += takeoverPrice; // เงินเข้าเจ้าของเดิม
+                            cell.owner = p.id;
+                            log(`${p.name} ยึดดาว ${cell.name}!`);
+                            updateCellUI(cell.id);
+                            updateStatus();
+                        }
+                    } else {
+                        await showModal("เงินไม่พอ!", "คุณมีเงินไม่พอยึดดาว", [{text: "ตกลง", value: 1}]);
+                    }
+                }
+            }
+        }
+    }
+
+    async function checkBankruptcy(pนี่คือไฟล์ HTML ของ "เกมเศรษฐีสมการอวกาศ" (Space Equation Monopoly) ที่ออกแบบตามความต้องการทั้งหมดครับ คุณสามารถคัดลอกโค้ดด้านล่างนี้ไปบันทึกเป็นไฟล์ `.html` (เช่น `spacemonopoly.html`) แล้วเปิดเล่นบนเบราว์เซอร์ได้ทันที หรือนำโค้ดไปวางในส่วนของ HTML บน Google Apps Script ได้ครับ
+
+```html
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เกมเศรษฐีสมการอวกาศ</title>
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --board-bg: #1f2833;
+            --text-color: #c5c6c7;
+            --accent: #66fcf1;
+            --accent-dim: #45a29e;
+            --prop-red: #ff4c4c;
+            --prop-orange: #ffa500;
+            --prop-yellow: #ffd700;
+            --prop-green: #32cd32;
+            --prop-cyan: #00ced1;
+            --prop-blue: #1e90ff;
+            --prop-purple: #9370db;
+            --prop-pink: #ff69b4;
+        }
+
+        * { box-sizing: border-box; font-family: 'Sarabun', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { margin: 0; padding: 0; background-color: var(--bg-color); color: white; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+        /* Starry Background */
+        .stars { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%); overflow: hidden; }
+        .star { position: absolute; background: white; border-radius: 50%; animation: twinkle infinite alternate; }
+        @keyframes twinkle { 0% { opacity: 0.2; } 100% { opacity: 1; box-shadow: 0 0 5px white; } }
+
+        /* Screens */
+        .screen { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; position: absolute; top: 0; left: 0; z-index: 10; background: rgba(11, 12, 16, 0.95); }
+        .screen.active { display: flex; }
+
+        h1 { font-size: 3rem; color: var(--accent); text-shadow: 0 0 10px var(--accent); text-align: center; margin-bottom: 10px; }
+        .setup-box { background: var(--board-bg); padding: 30px; border-radius: 15px; border: 2px solid var(--accent); text-align: center; max-width: 500px; width: 90%; }
+        
+        button { background: var(--accent); color: #000; border: none; padding: 15px 30px; font-size: 1.2rem; font-weight: bold; border-radius: 10px; cursor: pointer; transition: 0.2s; margin-top: 15px; text-transform: uppercase; }
+        button:hover { background: white; box-shadow: 0 0 15px var(--accent); transform: scale(1.05); }
+        button:disabled { background: gray; cursor: not-allowed; transform: none; box-shadow: none; }
+        
+        select { padding: 10px; font-size: 1.2rem; border-radius: 5px; margin: 10px 0; }
+
+        /* Main Game Layout */
+        #game-screen { display: none; flex-direction: column; height: 100vh; padding: 10px; }
+        #game-screen.active { display: flex; }
+        
+        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(31, 40, 51, 0.8); border-radius: 10px; margin-bottom: 10px; }
+        .current-turn-display { font-size: 1.5rem; font-weight: bold; color: var(--accent); }
+        .dice-area { display: flex; gap: 15px; align-items: center; }
+        .dice { font-size: 2.5rem; line-height: 1; text-shadow: 0 0 10px white; }
+
+        .game-content { display: flex; flex: 1; overflow: hidden; gap: 10px; flex-direction: column; }
+        @media (min-width: 1024px) { .game-content { flex-direction: row; } }
+
+        /* Board */
+        .board-container { flex: 3; overflow: auto; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.5); border-radius: 10px; border: 2px solid var(--accent-dim); padding: 10px; position: relative; }
+        .board { display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(8, 1fr); gap: 2px; width: 800px; height: 711px; min-width: 800px; position: relative; }
+        
+        .cell { background: #2c3e50; border: 1px solid #1a252f; border-radius: 5px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 0.75rem; overflow: hidden; cursor: default; }
+        .cell-color-bar { position: absolute; top: 0; left: 0; width: 100%; height: 25%; }
+        .cell-content { position: relative; z-index: 1; padding: 2px; text-shadow: 1px 1px 2px black; font-weight: bold; margin-top: 15px; }
+        .cell-price { font-size: 0.65rem; color: #f1c40f; }
+        .cell-icon { font-size: 1.2rem; }
+        .cell-owner { position: absolute; bottom: 2px; left: 2px; right: 2px; font-size: 0.6rem; background: rgba(0,0,0,0.6); border-radius: 3px; display: none; }
+        .cell-level { position: absolute; top: 2px; right: 2px; font-size: 0.6rem; z-index: 2; }
+        
+        .corner { background: #34495e; font-size: 0.85rem; }
+        
+        .special { background: #8e44ad; }
+        .cell.highlight { animation: pulseBorder 1s infinite; cursor: pointer; border: 3px solid #f1c40f; }
+        @keyframes pulseBorder { 0% { box-shadow: 0 0 5px #f1c40f; } 50% { box-shadow: 0 0 20px #f1c40f; } 100% { box-shadow: 0 0 5px #f1c40f; } }
+
+        /* Tokens */
+        .tokens-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+        .token { position: absolute; font-size: 1.5rem; transition: all 0.3s ease-in-out; text-shadow: 0 0 5px black; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; margin-left: -15px; margin-top: -15px; }
+        
+        /* Players Sidebar */
+        .players-sidebar { flex: 1; background: rgba(31, 40, 51, 0.9); border-radius: 10px; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; border: 2px solid var(--accent-dim); }
+        .player-card { background: #2c3e50; padding: 10px; border-radius: 8px; border-left: 5px solid transparent; transition: 0.3s; }
+        .player-card.active-turn { border-left-color: var(--accent); background: #34495e; box-shadow: 0 0 10px var(--accent); }
+        .player-card.bankrupt { opacity: 0.5; filter: grayscale(1); }
+        .p-name { font-weight: bold; font-size: 1.1rem; }
+        .p-money { color: #f1c40f; font-weight: bold; }
+        .p-props { font-size: 0.8rem; color: #bdc3c7; }
+
+        /* Modals */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; flex-direction: column; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: var(--board-bg); border: 2px solid var(--accent); border-radius: 15px; padding: 25px; max-width: 90%; width: 500px; text-align: center; box-shadow: 0 0 20px rgba(102, 252, 241, 0.5); }
+        .modal-title { font-size: 1.5rem; color: var(--accent); margin-bottom: 15px; }
+        .math-question { font-size: 2rem; margin: 20px 0; font-weight: bold; color: white; background: #000; padding: 15px; border-radius: 10px; letter-spacing: 2px; }
+        .math-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .math-choices button { font-size: 1.5rem; padding: 15px; margin: 0; }
+        .feedback { font-size: 1.2rem; font-weight: bold; margin-top: 15px; display: none; }
+        
+        .action-btns { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+        .btn-cancel { background: #e74c3c; }
+        .btn-cancel:hover { box-shadow: 0 0 15px #e74c3c; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Stars Background -->
+    <div class="stars" id="stars-bg"></div>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="screen active">
+        <h1>🚀 เกมเศรษฐีสมการอวกาศ 🌌</h1>
+        <div class="setup-box">
+            <h2>ยินดีต้อนรับเหล่านักบินอวกาศ!</h2>
+            <p>ทอยลูกเต๋า เดินทางไปตามดวงดาวต่างๆ<br>ตอบโจทย์สมการคณิตศาสตร์ให้ถูกต้องเพื่อยึดครองดวงดาว</p>
+            <p style="color: #f1c40f; font-size: 0.9rem;">เป้าหมาย: ทำให้ผู้อื่นล้มละลาย หรือ ครอบครองดาวทั้งแถบ หรือ ครอบครองดาวสีเดียวกันครบ 3 ชุด!</p>
+            <hr style="border-color: #45a29e; margin: 20px 0;">
+            <label for="player-count">จำนวนผู้เล่น (2-6 คน):</label>
+            <br>
+            <select id="player-count">
+                <option value="2">2 คน</option>
+                <option value="3">3 คน</option>
+                <option value="4">4 คน</option>
+                <option value="5">5 คน</option>
+                <option value="6">6 คน</option>
+            </select>
+            <br>
+            <button onclick="initGame()">เริ่มเกม</button>
+        </div>
+    </div>
+
+    <!-- Main Game Screen -->
+    <div id="game-screen">
+        <div class="top-bar">
+            <div class="current-turn-display" id="turn-display">ตานี้ของ: ผู้เล่น 1</div>
+            <div class="dice-area">
+                <div id="dice1" class="dice">🎲</div>
+                <div id="dice2" class="dice">🎲</div>
+                <button id="btn-roll" onclick="handleRollDice()">ทอยลูกเต๋า</button>
+            </div>
+        </div>
+        
+        <div class="game-content">
+            <div class="board-container">
+                <div class="board" id="board">
+                    <!-- Cells generated via JS -->
+                </div>
+                <div class="tokens-container" id="tokens-layer">
+                    <!-- Tokens generated via JS -->
+                </div>
+            </div>
+            
+            <div class="players-sidebar" id="players-sidebar">
+                <!-- Player cards generated via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal" class="modal-overlay">
+        <div class="modal-box" id="modal-box">
+            <!-- Content injected dynamically -->
+        </div>
+    </div>
+
+    <script>
+        // --- System & Visuals ---
+        function createStars() {
+            const stars = document.getElementById('stars-bg');
+            for(let i=0; i<50; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.width = Math.random() * 3 + 'px';
+                star.style.height = star.style.width;
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDuration = (Math.random() * 1 + 0.5) + 's';
+                star.style.animationDelay = Math.random() * 2 + 's';
+                stars.appendChild(star);
+            }
+        }
+        createStars();
+
+        // --- Game Data ---
+        const PLAYER_TOKENS = ['🚀', '🛸', '🛰️', '👨‍🚀', '☄️', '👽'];
+        const PLAYER_COLORS = ['#ff4c4c', '#32cd32', '#1e90ff', '#f1c40f', '#9370db', '#ff69b4'];
+        
+        let players = [];
+        let currentPlayerIndex = 0;
+        let festivalTargetId = -1;
+        let isAwaitingClick = false;
+        let clickCallback = null;
+
+        // Board Layout: 9 columns x 8 rows. Perimeter mapping.
+        // Spaces: 0 to 29 (30 total)
+        // Top row (0-8), Right col (9-14), Bottom row (15-23), Left col (24-29)
+        const SPACE_DEF = [
+            { id: 0, type: 'start', name: 'จุดเริ่มต้น', icon: '🏁', c: 1, r: 1 },
+            { id: 1, type: 'property', name: 'ดาวพุธ', group: 'red', price: 10, c: 2, r: 1 },
+            { id: 2, type: 'property', name: 'ดาวศุกร์', group: 'red', price: 12, c: 3, r: 1 },
+            { id: 3, type: 'property', name: 'ดาวโลก', group: 'red', price: 15, c: 4, r: 1 },
+            { id: 4, type: 'chance', name: 'การ์ดสุ่ม', icon: '🃏', c: 5, r: 1 },
+            { id: 5, type: 'property', name: 'ดาวอังคาร', group: 'orange', price: 18, c: 6, r: 1 },
+            { id: 6, type: 'property', name: 'ดาวพฤหัส', group: 'orange', price: 20, c: 7, r: 1 },
+            { id: 7, type: 'property', name: 'ดาวเสาร์', group: 'orange', price: 22, c: 8, r: 1 },
+            
+            { id: 8, type: 'blackhole', name: 'หลุมดำ', icon: '🌀', c: 9, r: 1 },
+            { id: 9, type: 'property', name: 'ดาวยูเรนัส', group: 'yellow', price: 25, c: 9, r: 2 },
+            { id: 10, type: 'property', name: 'ดาวเนปจูน', group: 'yellow', price: 25, c: 9, r: 3 },
+            { id: 11, type: 'property', name: 'ดาวพลูโต', group: 'yellow', price: 28, c: 9, r: 4 },
+            { id: 12, type: 'property', name: 'เซเรส', group: 'green', price: 30, c: 9, r: 5 },
+            { id: 13, type: 'property', name: 'อีริส', group: 'green', price: 30, c: 9, r: 6 },
+            { id: 14, type: 'property', name: 'เฮาเมอา', group: 'green', price: 32, c: 9, r: 7 },
+            
+            { id: 15, type: 'festival', name: 'เทศกาลอวกาศ', icon: '🎉', c: 9, r: 8 },
+            { id: 16, type: 'property', name: 'มาคีมาคี', group: 'cyan', price: 35, c: 8, r: 8 },
+            { id: 17, type: 'property', name: 'แอลฟา<br>เซนทอรี', group: 'cyan', price: 35, c: 7, r: 8 },
+            { id: 18, type: 'property', name: 'พร็อกซิมา', group: 'cyan', price: 38, c: 6, r: 8 },
+            { id: 19, type: 'chance', name: 'การ์ดสุ่ม', icon: '🃏', c: 5, r: 8 },
+            { id: 20, type: 'property', name: 'ซิริอุส', group: 'blue', price: 40, c: 4, r: 8 },
+            { id: 21, type: 'property', name: 'เวกา', group: 'blue', price: 42, c: 3, r: 8 },
+            { id: 22, type: 'property', name: 'ไรเจล', group: 'blue', price: 45, c: 2, r: 8 },
+            
+            { id: 23, type: 'spacestation', name: 'สถานีอวกาศ', icon: '🛰️', c: 1, r: 8 },
+            { id: 24, type: 'property', name: 'แอนทาเรส', group: 'purple', price: 45, c: 1, r: 7 },
+            { id: 25, type: 'property', name: 'บีเทลจุส', group: 'purple', price: 48, c: 1, r: 6 },
+            { id: 26, type: 'property', name: 'เคปเลอร์', group: 'purple', price: 50, c: 1, r: 5 },
+            { id: 27, type: 'property', name: 'แทรปพิสต์', group: 'pink', price: 55, c: 1, r: 4 },
+            { id: 28, type: 'property', name: 'แอนโดรเมดา', group: 'pink', price: 60, c: 1, r: 3 },
+            { id: 29, type: 'property', name: 'ทางช้างเผือก', group: 'pink', price: 65, c: 1, r: 2 }
+        ];
+
+        let boardSpaces = [];
+
+        const COLORS = {
+            'red': 'var(--prop-red)', 'orange': 'var(--prop-orange)', 'yellow': 'var(--prop-yellow)',
+            'green': 'var(--prop-green)', 'cyan': 'var(--prop-cyan)', 'blue': 'var(--prop-blue)',
+            'purple': 'var(--prop-purple)', 'pink': 'var(--prop-pink)'
+        };
+
+        // --- Initialization ---
+        function initGame() {
+            const count = parseInt(document.getElementById('player-count').value);
+            players = [];
+            for(let i=0; i<count; i++) {
+                players.push({
+                    id: i,
+                    name: `นักบิน ${i+1}`,
+                    money: 500, // In thousands (K)
+                    position: 0,
+                    color: PLAYER_COLORS[i],
+                    icon: PLAYER_TOKENS[i],
+                    isBankrupt: false,
+                    skipTurns: 0
+                });
+            }
+            
+            boardSpaces = SPACE_DEF.map(s => ({
+                ...s,
+                owner: null,
+                level: 0, // 0=none, 1,2,3, 4=Landmark
+            }));
+
+            document.getElementById('start-screen').classList.remove('active');
+            document.getElementById('game-screen').classList.add('active');
+            
+            renderBoard();
+            renderPlayers();
+            updateTokens();
+            updateTurnDisplay();
+        }
+
+        // --- Rendering ---
+        function renderBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            
+            boardSpaces.forEach(space => {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                if (['start', 'blackhole', 'festival', 'spacestation'].includes(space.type)) {
+                    cell.classList.add('corner');
+                } else if (space.type === 'chance') {
+                    cell.classList.add('special');
+                }
+
+                cell.style.gridColumn = space.c;
+                cell.style.gridRow = space.r;
+                cell.id = 'cell-' + space.id;
+
+                let html = '';
+                if (space.type === 'property') {
+                    html += `<div class="cell-color-bar" style="background-color: ${COLORS[space.group]}"></div>`;
+                    html += `<div class="cell-level" id="level-${space.id}"></div>`;
+                    html += `<div class="cell-content">`;
+                    html += `<div>${space.name}</div>`;
+                    html += `<div class="cell-price">${space.price}K</div>`;
+                    html += `</div>`;
+                    html += `<div class="cell-owner" id="owner-${space.id}"></div>`;
+                } else {
+                    html += `<div class="cell-content">`;
+                    html += `<div class="cell-icon">${space.icon}</div>`;
+                    html += `<div>${space.name}</div>`;
+                    html += `</div>`;
+                }
+                
+                cell.innerHTML = html;
+                
+                // Add click listener for target selection (Festival / Warp)
+                cell.onclick = () => {
+                    if (isAwaitingClick && clickCallback) {
+                        clickCallback(space.id);
+                    }
+                };
+
+                board.appendChild(cell);
+            });
+        }
+
+        function renderPlayers() {
+            const sidebar = document.getElementById('players-sidebar');
+            sidebar.innerHTML = '';
+            players.forEach(p => {
+                const div = document.createElement('div');
+                div.className = `player-card ${p.id === currentPlayerIndex ? 'active-turn' : ''} ${p.isBankrupt ? 'bankrupt' : ''}`;
+                div.id = 'pcard-' + p.id;
+                
+                let pProps = boardSpaces.filter(s => s.owner === p.id).length;
+
+                div.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:1.5rem">${p.icon}</span>
+                        <div>
+                            <div class="p-name" style="color:${p.color}">${p.name}</div>
+                            <div class="p-money">${p.money}K</div>
+                            <div class="p-props">ครอบครองดาว: ${pProps} ดวง</div>
+                            ${p.skipTurns > 0 ? `<div style="color:#e74c3c; font-size:0.8rem">ติดหลุมดำ ${p.skipTurns} ตา</div>` : ''}
+                        </div>
+                    </div>
+                `;
+                sidebar.appendChild(div);
+            });
+        }
+
+        function updateTokens() {
+            const container = document.getElementById('tokens-layer');
+            container.innerHTML = '';
+            
+            // Group players by position to offset them slightly
+            const posMap = {};
+            players.forEach(p => {
+                if(p.isBankrupt) return;
+                if(!posMap[p.position]) posMap[p.position] = [];
+                posMap[p.position].push(p);
+            });
+
+            for (const [pos, plList] of Object.entries(posMap)) {
+                const space = boardSpaces[pos];
+                // Calculate grid coordinates to pixel (approximate for absolute positioning)
+                // Board is 9x8 grid
+                const cWidth = 100/9;
+                const cHeight = 100/8;
+                
+                const centerX = (space.c - 1) * cWidth + (cWidth / 2);
+                const centerY = (space.r - 1) * cHeight + (cHeight / 2);
+
+                plList.forEach((p, idx) => {
+                    const token = document.createElement('div');
+                    token.className = 'token';
+                    token.innerHTML = p.icon;
+                    
+                    // Offset if multiple players on same space
+                    const offsetX = (idx % 2 === 0 ? 1 : -1) * (idx * 5);
+                    const offsetY = (idx > 1 ? 10 : -10);
+
+                    token.style.left = `calc(${centerX}% + ${offsetX}px)`;
+                    token.style.top = `calc(${centerY}% + ${offsetY}px)`;
+                    
+                    container.appendChild(token);
+                });
+            }
+        }
+
+        function updatePropertyVisuals() {
+            boardSpaces.forEach(space => {
+                if(space.type === 'property') {
+                    const ownerDiv = document.getElementById(`owner-${space.id}`);
+                    const levelDiv = document.getElementById(`level-${space.id}`);
+                    const cell = document.getElementById(`cell-${space.id}`);
+                    
+                    if(space.owner !== null) {
+                        const owner = players.find(p => p.id === space.owner);
+                        ownerDiv.style.display = 'block';
+                        ownerDiv.style.color = owner.color;
+                        ownerDiv.innerText = owner.name;
+                        
+                        let lvlIcons = '';
+                        if(space.level === 4) lvlIcons = '🗼'; // Landmark
+                        else lvlIcons = '⭐'.repeat(space.level);
+                        levelDiv.innerHTML = lvlIcons;
+
+                        // Festival Highlight
+                        if(festivalTargetId === space.id) {
+                            cell.style.boxShadow = `inset 0 0 15px #f1c40f`;
+                        } else {
+                            cell.style.boxShadow = 'none';
+                        }
+                    } else {
+                        ownerDiv.style.display = 'none';
+                        levelDiv.innerHTML = '';
+                        cell.style.boxShadow = 'none';
+                    }
+                }
+            });
+        }
+
+        function updateTurnDisplay() {
+            const p = players[currentPlayerIndex];
+            document.getElementById('turn-display').innerText = `ตานี้ของ: ${p.name} ${p.icon}`;
+            document.getElementById('turn-display').style.color = p.color;
+            document.getElementById('btn-roll').disabled = false;
+            
+            // Highlight current player card
+            document.querySelectorAll('.player-card').forEach(c => c.classList.remove('active-turn'));
+            document.getElementById('pcard-' + p.id).classList.add('active-turn');
+        }
+
+        // --- Dice & Movement ---
+        const diceChars = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+        
+        async function handleRollDice() {
+            const p = players[currentPlayerIndex];
+            document.getElementById('btn-roll').disabled = true;
+
+            // Check skip turn (Blackhole)
+            if (p.skipTurns > 0) {
+                p.skipTurns--;
+                await showInfoModal('ติดหลุมดำ!', `${p.name} ไม่สามารถเดินได้ (เหลืออีก ${p.skipTurns} ตา)`);
+                renderPlayers();
+                nextTurn();
+                return;
+            }
+
+            // Animate Dice
+            let d1 = 1, d2 = 1;
+            const dElem1 = document.getElementById('dice1');
+            const dElem2 = document.getElementById('dice2');
+            
+            for(let i=0; i<10; i++) {
+                d1 = Math.floor(Math.random() * 6) + 1;
+                d2 = Math.floor(Math.random() * 6) + 1;
+                dElem1.innerText = diceChars[d1-1];
+                dElem2.innerText = diceChars[d2-1];
+                await new Promise(r => setTimeout(r, 100));
+            }
+            
+            const steps = d1 + d2;
+            await animateMove(p, steps);
+        }
+
+        async function animateMove(player, steps) {
+            for(let i=0; i<steps; i++) {
+                player.position++;
+                if (player.position >= 30) {
+                    player.position = 0;
+                    player.money += 20; // Pass start +20K
+                    renderPlayers();
+                }
+                updateTokens();
+                await new Promise(r => setTimeout(r, 200));
+            }
+            
+            await resolveSpace(player);
+        }
+
+        async function warpToSpace(player, targetId) {
+            player.position = targetId;
+            updateTokens();
+            await new Promise(r => setTimeout(r, 500));
+            await resolveSpace(player);
+        }
+
+        // --- Core Logic & Resolving ---
+        async function resolveSpace(player) {
+            const space = boardSpaces[player.position];
+            
+            if (space.type === 'start') {
+                await showInfoModal('จุดเริ่มต้น', 'รับเงินสนับสนุน 20K');
+            } 
+            else if (space.type === 'blackhole') {
+                player.skipTurns = 2;
+                await showInfoModal('หลุมดำ!', 'คุณถูกดูดเข้าไปในหลุมดำ งดเดิน 2 ตา');
+            }
+            else if (space.type === 'chance') {
+                await resolveChance(player);
+            }
+            else if (space.type === 'festival') {
+                await resolveFestival(player);
+                return; // nextTurn handled inside
+            }
+            else if (space.type === 'spacestation') {
+                await resolveSpaceStation(player);
+                return; // nextTurn handled inside
+            }
+            else if (space.type === 'property') {
+                await resolveProperty(player, space);
+            }
+
+            checkWinCondition();
+            if(!checkGameEnd()) {
+                nextTurn();
+            }
+        }
+
+        async function resolveProperty(player, space) {
+            // Unowned
+            if (space.owner === null) {
+                const canBuy = await playMathMinigame();
+                if (canBuy) {
+                    if (player.money >= space.price) {
+                        const buy = await showConfirmModal(`ค้นพบ ${space.name}`, `ต้องการซื้อดาวดวงนี้ในราคา ${space.price}K หรือไม่?`);
+                        if (buy) {
+                            player.money -= space.price;
+                            space.owner = player.id;
+                            space.level = 1;
+                        }
+                    } else {
+                        await showInfoModal('เงินไม่พอ', `คุณมีเงินไม่พอซื้อ ${space.name}`);
+                    }
+                }
+            } 
+            // Owned by self
+            else if (space.owner === player.id) {
+                if (space.level < 4) {
+                    const upgradePrices = [0, 10, 15, 20]; // Cost to upgrade to Lvl 2, 3, 4
+                    const cost = upgradePrices[space.level];
+                    const levelNames = ['','เมือง','มหานคร','แลนด์มาร์ค (ป้องกันการซื้อต่อ)'];
+                    
+                    const canUpgrade = await playMathMinigame();
+                    if(canUpgrade) {
+                        if (player.money >= cost) {
+                            const up = await showConfirmModal(`พัฒนา ${space.name}`, `อัพเกรดเป็น ${levelNames[space.level]} ราคา ${cost}K หรือไม่?`);
+                            if(up) {
+                                player.money -= cost;
+                                space.level++;
+                            }
+                        } else {
+                            await showInfoModal('เงินไม่พอ', `คุณมีเงินไม่พออัพเกรด`);
+                        }
+                    }
+                } else {
+                    await showInfoModal('แลนด์มาร์ค', `ดาว ${space.name} พัฒนาสูงสุดแล้ว!`);
+                }
+            }
+            // Owned by other
+            else {
+                const owner = players.find(p => p.id === space.owner);
+                if (owner.isBankrupt) return; // Ghost town
+
+                // Calculate Rent
+                let baseToll = space.price * [0, 0.5, 1, 2, 4][space.level];
+                if (space.id === festivalTargetId) baseToll *= 2;
+                
+                baseToll = Math.floor(baseToll);
+                
+                await showInfoModal('จ่ายค่าผ่านทาง', `คุณตกลงบนดาว ${space.name} ของ ${owner.name}<br>ต้องจ่ายค่าผ่านทาง ${baseToll}K`);
+                
+                player.money -= baseToll;
+                owner.money += baseToll;
+                
+                renderPlayers(); // Update money instantly
+
+                if (player.money < 0) {
+                    await handleBankruptcy(player);
+                    return; // Skip takeover if dead
+                }
+
+                // Takeover Logic (If not Landmark Lvl 4)
+                if (space.level < 4) {
+                    let totalValue = space.price;
+                    if(space.level >= 2) totalValue += 10;
+                    if(space.level >= 3) totalValue += 15;
+                    const takeoverCost = totalValue * 2;
+
+                    if (player.money >= takeoverCost) {
+                        const wantTakeover = await showConfirmModal(`ซื้อต่อ ${space.name}?`, `คุณสามารถยึดดาวดวงนี้ได้ในราคา 2 เท่า คือ ${takeoverCost}K`);
+                        if(wantTakeover) {
+                            const canTakeover = await playMathMinigame();
+                            if(canTakeover) {
+                                player.money -= takeoverCost;
+                                space.owner = player.id;
+                                space.level++; // Auto upgrade 1 level when takeover
+                            }
+                        }
+                    }
+                }
+            }
+            updatePropertyVisuals();
+            renderPlayers();
+        }
+
+        async function resolveChance(player) {
+            const cards = [
+                { title: 'รัฐบาลอุดหนุน', desc: 'ได้รับเงินทุนสนับสนุน 30K', eff: () => player.money += 30 },
+                { title: 'พบแหล่งแร่', desc: 'ขุดพบแร่หายาก ได้รับเงิน 50K', eff: () => player.money += 50 },
+                { title: 'เครื่องยนต์ขัดข้อง', desc: 'ซ่อมยานอวกาศ จ่าย 20K', eff: () => player.money -= 20 },
+                { title: 'หลงทาง', desc: 'หลงในดงดาวเคราะห์น้อย เดินถอยหลัง 3 ช่อง', eff: async () => { player.position -= 3; if(player.position < 0) player.position += 30; } }
+            ];
+            
+            const card = cards[Math.floor(Math.random() * cards.length)];
+            await showInfoModal(`การ์ดสุ่ม: ${card.title}`, card.desc);
+            await card.eff();
+            updateTokens();
+            renderPlayers();
+        }
+
+        function resolveFestival(player) {
+            const myProps = boardSpaces.filter(s => s.owner === player.id);
+            if(myProps.length === 0) {
+                showInfoModal('เทศกาลอวกาศ', 'คุณยังไม่มีดาวเป็นของตัวเอง').then(nextTurn);
+                return;
+            }
+
+            showInfoModal('เทศกาลอวกาศ', 'คลิกเลือกดาวของคุณ 1 ดวง เพื่อจัดงานเทศกาล (ค่าผ่านทาง x2)').then(() => {
+                myProps.forEach(s => document.getElementById(`cell-${s.id}`).classList.add('highlight'));
+                
+                isAwaitingClick = true;
+                clickCallback = (spaceId) => {
+                    const sp = boardSpaces[spaceId];
+                    if(sp.owner === player.id) {
+                        isAwaitingClick = false;
+                        clickCallback = null;
+                        festivalTargetId = spaceId;
+                        
+                        document.querySelectorAll('.cell').forEach(c => c.classList.remove('highlight'));
+                        updatePropertyVisuals();
+                        showInfoModal('สำเร็จ', `จัดงานเทศกาลที่ ${sp.name} แล้ว!`).then(nextTurn);
+                    }
+                };
+            });
+        }
+
+        function resolveSpaceStation(player) {
+            showInfoModal('สถานีอวกาศ', 'คลิกเลือกช่องใดก็ได้บนกระดานเพื่อวาร์ปไปที่นั่น').then(() => {
+                document.querySelectorAll('.cell').forEach(c => c.classList.add('highlight'));
+                
+                isAwaitingClick = true;
+                clickCallback = (spaceId) => {
+                    isAwaitingClick = false;
+                    clickCallback = null;
+                    document.querySelectorAll('.cell').forEach(c => c.classList.remove('highlight'));
+                    
+                    warpToSpace(player, spaceId); 
+                    // warpToSpace will call resolveSpace and then nextTurn
+                };
+            });
+        }
+
+        async function handleBankruptcy(player) {
+            player.isBankrupt = true;
+            // Clear properties
+            boardSpaces.forEach(s => {
+                if(s.owner === player.id) {
+                    s.owner = null;
+                    s.level = 0;
+                    if(festivalTargetId === s.id) festivalTargetId = -1;
+                }
+            });
+            updatePropertyVisuals();
+            renderPlayers();
+            await showInfoModal('ล้มละลาย!', `${player.name} ล้มละลายและต้องออกจากเกม`);
+        }
+
+        function checkWinCondition() {
+            const activePlayers = players.filter(p => !p.isBankrupt);
+            if(activePlayers.length === 1) {
+                showVictory(activePlayers[0], 'ผู้เล่นคนอื่นล้มละลายหมดแล้ว!');
+                return;
+            }
+
+            // Check Monopolies
+            activePlayers.forEach(p => {
+                const props = boardSpaces.filter(s => s.owner === p.id);
+                
+                // Line Monopoly (All properties on one side)
+                const lines = [
+                    [1,2,3,5,6,7],       // Top
+                    [9,10,11,12,13,14],  // Right
+                    [16,17,18,20,21,22], // Bottom
+                    [24,25,26,27,28,29]  // Left
+                ];
+
+                for(let line of lines) {
+                    if(line.every(id => boardSpaces[id].owner === p.id)) {
+                        showVictory(p, 'ครอบครองดาวทั้งแถบ (Line Monopoly)!');
+                        return;
+                    }
+                }
+
+                // Triple Monopoly (Own 3 full color groups)
+                const groupCounts = {};
+                props.forEach(pr => {
+                    groupCounts[pr.group] = (groupCounts[pr.group] || 0) + 1;
+                });
+                
+                let completedGroups = 0;
+                for(let key in groupCounts) {
+                    if(groupCounts[key] === 3) completedGroups++;
+                }
+
+                if(completedGroups >= 3) {
+                    showVictory(p, 'ครอบครองดาวครบ 3 สี (Triple Monopoly)!');
+                    return;
+                }
+            });
+        }
+
+        let gameEnded = false;
+        function showVictory(player, reason) {
+            gameEnded = true;
+            showInfoModal('🏆 ผู้ชนะ 🏆', `ขอแสดงความยินดีกับ ${player.name}!<br>${reason}`).then(() => {
+                location.reload();
+            });
+        }
+        function checkGameEnd() { return gameEnded; }
+
+        function nextTurn() {
+            if(gameEnded) return;
+            do {
+                currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            } while(players[currentPlayerIndex].isBankrupt);
+            
+            updateTurnDisplay();
+        }
+
+        // --- Math Minigame Generator ---
+        function generateMathQuestion() {
+            const types = 4;
+            const type = Math.floor(Math.random() * types);
+            let a, b, ans, qText, expl;
+
+            if (type === 0) { // x + a = b
+                a = Math.floor(Math.random() * 20) + 1;
+                ans = Math.floor(Math.random() * 20) + 1;
+                b = a + ans;
+                qText = `🚀 + ${a} = ${b}<br>จรวด (🚀) มีค่าเท่าใด?`;
+                expl = `${ans} + ${a} = ${b}`;
+            } 
+            else if (type === 1) { // x - a = b
+                a = Math.floor(Math.random() * 20) + 1;
+                b = Math.floor(Math.random() * 20) + 1;
+                ans = a + b;
+                qText = `🛸 - ${a} = ${b}<br>ยาน (🛸) มีค่าเท่าใด?`;
+                expl = `${ans} - ${a} = ${b}`;
+            }
+            else if (type === 2) { // a * x = b
+                a = Math.floor(Math.random() * 9) + 2; // 2-10
+                ans = Math.floor(Math.random() * 9) + 2; // 2-10
+                b = a * ans;
+                qText = `${a} × 👽 = ${b}<br>เอเลี่ยน (👽) มีค่าเท่าใด?`;
+                expl = `${a} × ${ans} = ${b}`;
+            }
+            else { // x / a = b
+                a = Math.floor(Math.random() * 5) + 2;
+                b = Math.floor(Math.random() * 9) + 2;
+                ans = a * b;
+                qText = `☄️ ÷ ${a} = ${b}<br>ดาวหาง (☄️) มีค่าเท่าใด?`;
+                expl = `${ans} ÷ ${a} = ${b}`;
+            }
+
+            // Generate choices
+            let choices = new Set([ans]);
+            while(choices.size < 4) {
+                let offset = Math.floor(Math.random() * 7) - 3;
+                if(offset === 0) offset = 4;
+                let wrong = ans + offset;
+                if(wrong > 0) choices.add(wrong);
+            }
+            
+            let choicesArr = Array.from(choices);
+            choicesArr.sort(() => Math.random() - 0.5);
+
+            return { qText, choices: choicesArr, ans, expl };
+        }
+
+        // --- Custom Modals using Promises ---
+        function playMathMinigame() {
+            return new Promise(resolve => {
+                const { qText, choices, ans, expl } = generateMathQuestion();
+                const modal = document.getElementById('modal');
+                const box = document.getElementById('modal-box');
+                
+                let html = `<div class="modal-title">แก้สมการเพื่อรับสิทธิ์!</div>`;
+                html += `<div class="math-question">${qText}</div>`;
+                html += `<div class="math-choices">`;
+                choices.forEach(c => {
+                    html += `<button onclick="handleMathAnswer(${c}, ${ans}, '${expl}')">${c}</button>`;
+                });
+                html += `</div>`;
+                html += `<div id="math-feedback" class="feedback"></div>`;
+                html += `<div class="action-btns" id="math-next-btn" style="display:none;"><button onclick="closeModal()">ดำเนินการต่อ</button></div>`;
+                
+                box.innerHTML = html;
+                modal.classList.add('active');
+
+                window.handleMathAnswer = (selected, correct, explanation) => {
+                    // Disable choice buttons
+                    const btns = box.querySelectorAll('.math-choices button');
+                    btns.forEach(b => b.disabled = true);
+                    
+                    const fb = document.getElementById('math-feedback');
+                    fb.style.display = 'block';
+                    
+                    let isCorrect = (selected === correct);
+                    if(isCorrect) {
+                        fb.style.color = '#32cd32';
+                        fb.innerText = '✅ ถูกต้อง ยอดเยี่ยมมาก!';
+                    } else {
+                        fb.style.color = '#e74c3c';
+                        fb.innerText = `❌ ผิด! คำตอบคือ ${correct} (เพราะ ${explanation})`;
+                    }
+                    
+                    document.getElementById('math-next-btn').style.display = 'flex';
+                    
+                    // Override close modal to resolve promise
+                    window.closeModal = () => {
+                        modal.classList.remove('active');
+                        resolve(isCorrect);
+                    };
+                };
+            });
+        }
+
+        function showConfirmModal(title, text) {
+            return new Promise(resolve => {
+                const modal = document.getElementById('modal');
+                const box = document.getElementById('modal-box');
+                
+                box.innerHTML = `
+                    <div class="modal-title">${title}</div>
+                    <p style="font-size:1.2rem">${text}</p>
+                    <div class="action-btns">
+                        <button onclick="closeConfirm(true)">ยืนยัน</button>
+                        <button class="btn-cancel" onclick="closeConfirm(false)">ยกเลิก</button>
+                    </div>
+                `;
+                modal.classList.add('active');
+
+                window.closeConfirm = (res) => {
+                    modal.classList.remove('active');
+                    resolve(res);
+                };
+            });
+        }
+
+        function showInfoModal(title, text) {
+            return new Promise(resolve => {
+                const modal = document.getElementById('modal');
+                const box = document.getElementById('modal-box');
+                
+                box.innerHTML = `
+                    <div class="modal-title">${title}</div>
+                    <p style="font-size:1.2rem">${text}</p>
+                    <div class="action-btns">
+                        <button onclick="closeInfo()">ตกลง</button>
+                    </div>
+                `;
+                modal.classList.add('active');
+
+                window.closeInfo = () => {
+                    modal.classList.remove('active');
+                    resolve();
+                };
+            });
+        }
+
+    </script>
+</body>
+</html>
