@@ -1,753 +1,390 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>เศรษฐีอวกาศ: ยอดนักแก้สมการ</title>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #0b0c10;
-            --panel: #1f2833;
-            --accent: #66fcf1;
-            --accent-dark: #45a29e;
-            --gold: #f1c40f;
-            --red: #ff4757;
-            --green: #2ed573;
-        }
-        * { box-sizing: border-box; font-family: 'Kanit', sans-serif; user-select: none; }
-        body { margin: 0; padding: 0; background-color: var(--bg); color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เกมกระดานอวกาศ - Space Board Game</title>
+  <style>
+    /* --- 1. รีเซ็ตค่าพื้นฐาน และธีมอวกาศ --- */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Kanit', 'Prompt', sans-serif;
+    }
 
-        /* Screen Manager */
-        .screen { display: none; width: 100%; max-width: 1000px; padding: 15px; flex-direction: column; align-items: center; }
-        .screen.active { display: flex; }
+    body {
+      background-color: #0b0e14;
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(20, 30, 48, 0.5) 0%, rgba(11, 14, 20, 1) 100%),
+        radial-gradient(2px 2px at 40px 60px, #fff, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 150px 150px, rgba(255,255,255,0.8), rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 300px 80px, rgba(255,255,255,0.6), rgba(0,0,0,0));
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
 
-        /* Start Screen */
-        #start-screen { justify-content: center; min-height: 100vh; text-align: center; }
-        h1 { font-size: 2.8rem; color: var(--accent); text-shadow: 0 0 15px var(--accent); margin: 0 0 10px 0; }
-        .rule-card { background: var(--panel); border: 2px solid var(--accent-dark); border-radius: 15px; padding: 20px; margin-bottom: 25px; max-width: 600px; text-align: left; line-height: 1.6; }
-        .rule-card h3 { margin-top: 0; color: var(--gold); text-align: center; font-size: 1.4rem; }
-        
-        .setup-group { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; font-size: 1.2rem; }
-        select { font-size: 1.2rem; padding: 8px 15px; border-radius: 8px; background: var(--panel); color: #fff; border: 2px solid var(--accent); cursor: pointer; }
-        
-        .btn-main { font-size: 1.5rem; padding: 12px 40px; border-radius: 50px; background: var(--accent); color: #000; border: none; font-weight: 800; cursor: pointer; transition: 0.2s; box-shadow: 0 0 15px var(--accent); }
-        .btn-main:hover { transform: scale(1.05); background: #fff; }
+    /* --- 2. เลย์เอาต์หลัก (แยกแผงผู้เล่นอยู่นอกกระดาน) --- */
+    .game-layout {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 25px;
+      max-width: 1200px;
+      width: 100%;
+    }
 
-        /* Top Bar Info */
-        .top-info { width: 100%; display: flex; justify-content: space-between; align-items: center; background: var(--panel); padding: 10px 15px; border-radius: 10px; border: 1px solid var(--accent-dark); margin-bottom: 10px; }
-        .turn-badge { font-size: 1.3rem; font-weight: 600; padding: 5px 15px; border-radius: 20px; background: rgba(255,255,255,0.1); }
+    /* --- 3. แผงแสดงเงินผู้เล่น (Sidebar นอกกระดาน) --- */
+    .player-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 200px;
+      flex-shrink: 0;
+    }
 
-        /* Monopoly Board Grid (9 cols x 8 rows = 30 cells) */
-        .board-wrapper { width: 100%; aspect-ratio: 9/8; max-height: 75vh; background: var(--panel); border-radius: 12px; border: 3px solid var(--accent-dark); display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(8, 1fr); gap: 3px; padding: 3px; position: relative; }
-        
-        .cell { background: rgba(255,255,255,0.05); border: 1px solid rgba(102, 252, 241, 0.2); border-radius: 6px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 3px; font-size: 0.75rem; overflow: hidden; text-align: center; }
-        .cell.corner { background: rgba(69, 162, 158, 0.25); font-weight: bold; }
-        .cell.special { background: rgba(147, 112, 219, 0.25); }
-        .cell.highlight { cursor: pointer; animation: pulse 1s infinite alternate; border: 2px solid var(--gold); }
-        @keyframes pulse { from { box-shadow: inset 0 0 5px var(--gold); } to { box-shadow: inset 0 0 15px var(--gold); } }
+    .player-card {
+      background: rgba(22, 27, 34, 0.85);
+      border: 2px solid #30363d;
+      border-radius: 16px;
+      padding: 20px 15px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(8px);
+      transition: all 0.3s ease;
+    }
 
-        .cell-owner-bar { position: absolute; top: 0; left: 0; width: 100%; height: 6px; }
-        .cell-title { font-weight: 600; font-size: 0.75rem; margin-top: 6px; line-height: 1.1; z-index: 2; }
-        .cell-price { color: var(--gold); font-size: 0.65rem; z-index: 2; }
-        .cell-level { font-size: 0.7rem; z-index: 2; }
-        .festival-indicator { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.8rem; opacity: 0.4; pointer-events: none; }
+    /* สไตล์เมื่อถึงตาผู้เล่นนั้นๆ */
+    .player-card.active-turn {
+      border-color: #00f2fe;
+      box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
+      transform: translateY(-5px);
+    }
 
-        .tokens-container { position: absolute; bottom: 3px; left: 0; width: 100%; display: flex; justify-content: center; gap: 2px; flex-wrap: wrap; z-index: 5; }
-        .token { width: 14px; height: 14px; border-radius: 50%; border: 1px solid #fff; box-shadow: 0 0 4px #000; transition: all 0.3s ease; }
+    /* สีเอกลักษณ์ของผู้เล่นแต่ละคน */
+    .player-card.p1 { border-left: 6px solid #ff4b5c; }
+    .player-card.p2 { border-left: 6px solid #00d2ff; }
 
-        /* Board Center Control */
-        .center-control { grid-column: 2 / 9; grid-row: 2 / 8; background: rgba(11, 12, 16, 0.85); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: space-around; padding: 10px; border: 1px solid rgba(255,255,255,0.1); }
-        .dice-box { display: flex; gap: 15px; font-size: 2.5rem; }
-        .dice { width: 55px; height: 55px; background: #fff; color: #000; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        
-        .status-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 100%; }
-        .player-card { background: rgba(255,255,255,0.08); padding: 6px 12px; border-radius: 8px; border-left: 5px solid #fff; text-align: center; min-width: 90px; font-size: 0.85rem; }
-        .player-card.active { transform: scale(1.08); background: rgba(255,255,255,0.2); box-shadow: 0 0 10px rgba(255,255,255,0.3); }
-        .player-card.bankrupt { opacity: 0.3; text-decoration: line-through; }
+    .player-avatar {
+      font-size: 2.8rem;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+    }
 
-        .log-box { width: 95%; height: 50px; background: rgba(0,0,0,0.6); border-radius: 6px; padding: 5px; font-size: 0.85rem; color: #aaa; overflow-y: auto; text-align: center; }
+    .player-name {
+      display: block;
+      font-size: 1rem;
+      color: #8b949e;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
 
-        /* Modal Popup */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(4px); }
-        .modal-overlay.active { display: flex; }
-        .modal-card { background: var(--panel); border: 2px solid var(--accent); border-radius: 18px; padding: 25px; width: 90%; max-width: 450px; text-align: center; box-shadow: 0 0 25px rgba(102, 252, 241, 0.4); animation: pop 0.25s ease-out; }
-        @keyframes pop { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .player-money {
+      display: block;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #ffcc00;
+      text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+    }
 
-        .modal-title { font-size: 1.5rem; color: var(--accent); font-weight: 800; margin-bottom: 10px; }
-        .modal-body { font-size: 1.1rem; margin-bottom: 20px; line-height: 1.5; }
-        .btn-group { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
-        .btn-opt { font-size: 1.1rem; padding: 10px 25px; border-radius: 25px; border: none; cursor: pointer; font-weight: 600; background: var(--accent); color: #000; }
-        .btn-opt.cancel { background: var(--red); color: #fff; }
+    /* --- 4. โครงสร้างกระดานเกม (Center Board) --- */
+    .board-container {
+      background: rgba(15, 20, 28, 0.95);
+      border: 2px solid #2d3748;
+      border-radius: 20px;
+      padding: 15px;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+      display: grid;
+      grid-template-columns: repeat(5, 110px);
+      grid-template-rows: repeat(5, 110px);
+      gap: 8px;
+    }
 
-        /* Math Choices */
-        .math-eq { font-size: 2.2rem; color: var(--gold); font-weight: 800; margin: 15px 0; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px; }
-        .math-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
-        .btn-math { font-size: 1.4rem; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.1); border: 2px solid var(--accent-dark); color: #fff; cursor: pointer; transition: 0.2s; }
-        .btn-math:hover { background: var(--accent); color: #000; }
+    /* พื้นที่ตรงกลางกระดาน */
+    .board-center {
+      grid-column: 2 / 5;
+      grid-row: 2 / 5;
+      background: #0d1117;
+      border-radius: 12px;
+      border: 1px solid #21262d;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      padding: 15px;
+      text-align: center;
+    }
 
-        @media (max-width: 650px) {
-            h1 { font-size: 2rem; }
-            .board-wrapper { height: 60vh; }
-            .cell-title { font-size: 0.6rem; }
-            .cell-price { font-size: 0.55rem; }
-            .dice { width: 40px; height: 40px; font-size: 1.8rem; }
-            .btn-main { font-size: 1.2rem; padding: 10px 30px; }
-            .player-card { min-width: 70px; font-size: 0.75rem; padding: 4px; }
-        }
-    </style>
+    .turn-indicator {
+      background: linear-gradient(90deg, #ff4b5c, #ff758c);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+
+    .dice-area {
+      display: flex;
+      gap: 10px;
+    }
+
+    .dice {
+      width: 45px;
+      height: 45px;
+      background: #fff;
+      color: #000;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      box-shadow: inset 0 0 5px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.4);
+    }
+
+    .roll-btn {
+      background: #00f2fe;
+      background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+      color: #000;
+      border: none;
+      padding: 10px 24px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 25px;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .roll-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(0, 242, 254, 0.7);
+    }
+
+    /* --- 5. ช่องเมืองบนกระดาน (Tile) & ปรับขนาดไอคอน --- */
+    .tile {
+      background: #161b22;
+      border: 2px solid #30363d;
+      border-radius: 12px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+
+    /* แสดงความเป็นเจ้าของด้วยสีขอบ */
+    .tile.owner-p1 { border-color: #ff4b5c; box-shadow: inset 0 0 10px rgba(255, 75, 92, 0.2); }
+    .tile.owner-p2 { border-color: #00d2ff; box-shadow: inset 0 0 10px rgba(0, 210, 255, 0.2); }
+
+    /* ปรับขนาดไอคอนเมืองให้ใหญ่ขึ้น */
+    .tile-icon {
+      font-size: 2.2rem; /* ขนาดใหญ่ ชัดเจน */
+      margin-top: 2px;
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));
+    }
+
+    .tile-name {
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: #e6edf3;
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .tile-price {
+      font-size: 0.75rem;
+      color: #ffcc00;
+      font-weight: bold;
+    }
+
+    /* --- 6. ระบบดาว 3D แสดงระดับเมือง (1-4 ดวง) --- */
+    .star-container {
+      display: flex;
+      justify-content: center;
+      gap: 1px;
+      min-height: 18px;
+    }
+
+    .star-3d {
+      font-size: 0.85rem;
+      display: inline-block;
+      /* ทำสี Gradient ให้ดาวดูมีมิติ */
+      background: linear-gradient(180deg, #ffe600 0%, #ff8800 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      /* เพิ่มเงาตกกระทบสร้างเอฟเฟกต์ 3D */
+      filter: drop-shadow(0px 2px 0px #804400) drop-shadow(0px 2px 3px rgba(0,0,0,0.8));
+    }
+
+    /* เอฟเฟกต์พิเศษสำหรับดาวเมืองระดับ 4 (เมืองแลนด์มาร์ก) */
+    .level-4 .star-3d {
+      filter: drop-shadow(0 0 6px #ff0055) drop-shadow(0px 2px 0px #800022);
+      animation: pulseGlow 1.5s infinite alternate;
+    }
+
+    @keyframes pulseGlow {
+      from { transform: scale(1); }
+      to { transform: scale(1.15); }
+    }
+  </style>
 </head>
 <body>
 
-    <!-- START SCREEN -->
-    <div id="start-screen" class="screen active">
-        <h1>🚀 เศรษฐีอวกาศ: ยอดนักแก้สมการ</h1>
-        <div class="rule-card">
-            <h3>📜 กติกาการเล่น</h3>
-            1. ทอยลูกเต๋า 2 ลูกเพื่อเดินทางไปสำรวจดวงดาว<br>
-            2. ตอบคำถาม<b>แก้สมการคณิตศาสตร์</b>ให้ถูกต้องเพื่อซื้อดาวหรือพัฒนาเมือง (สูงสุด 4 ขั้น = Landmark ป้องกันการถูกยึด)<br>
-            3. หากตกดาวของคู่แข่ง ต้องจ่ายค่าผ่านทาง และเลือก<b>ซื้อต่อ (Takeover)</b> ได้กรณีที่ยังไม่เป็น Landmark<br>
-            4. <b>ช่องพิเศษ:</b> หลุมดำ (งดเดิน 2 ตา), เทศกาล (เพิ่มค่าผ่านทาง x2), สถานีอวกาศ (วาร์ป), การ์ดสุ่ม<br>
-            5. <b>เงื่อนไขการชนะ:</b> ซื้อดาวครบ 1 แถว (Line Monopoly) หรือ ซื้อดาวติดกัน 3 เมืองครบ 3 จุด หรือทำให้ผู้เล่นอื่นล้มละลายทั้งหมด
-        </div>
-        <div class="setup-group">
-            <label for="player-select">จำนวนผู้เล่น:</label>
-            <select id="player-select">
-                <option value="2">2 คน</option>
-                <option value="3">3 คน</option>
-                <option value="4">4 คน</option>
-                <option value="5">5 คน</option>
-                <option value="6">6 คน</option>
-            </select>
-        </div>
-        <button class="btn-main" onclick="startGame()">เริ่มผจญภัย!</button>
-    </div>
-
-    <!-- GAME SCREEN -->
-    <div id="game-screen" class="screen">
-        <div class="top-info">
-            <div id="turn-display" class="turn-badge">ตานี้ของ: นักบิน 1</div>
-            <div style="color: var(--gold); font-size: 0.9rem;">⭐ สมการระดับประถมศึกษา</div>
-        </div>
-
-        <div class="board-wrapper" id="board">
-            <div class="center-control">
-                <div class="status-list" id="status-list"></div>
-                <div class="log-box" id="log-box">ยินดีต้อนรับสู่สถานีอวกาศ!</div>
-                <div class="dice-box">
-                    <div class="dice" id="d1">🎲</div>
-                    <div class="dice" id="d2">🎲</div>
-                </div>
-                <button class="btn-main" id="btn-roll" onclick="rollDice()">ทอยลูกเต๋า</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL POPUP -->
-    <div id="modal-overlay" class="modal-overlay">
-        <div class="modal-card" id="modal-card">
-            <div class="modal-title" id="m-title">หัวข้อ</div>
-            <div class="modal-body" id="m-body">รายละเอียด</div>
-            <div class="btn-group" id="m-btns"></div>
-        </div>
-    </div>
-
-    <!-- MATH MODAL -->
-    <div id="math-overlay" class="modal-overlay">
-        <div class="modal-card">
-            <div class="modal-title">🌌 ภารกิจแก้สมการ!</div>
-            <div style="font-size: 0.95rem; color: #ccc;">ตอบคำถามให้ถูกต้องเพื่อทำรายการ</div>
-            <div class="math-eq" id="math-eq">x + 5 = 12</div>
-            <div class="math-grid" id="math-grid"></div>
-            <div id="math-explanation" style="font-size: 0.95rem; font-weight: bold; min-height: 25px;"></div>
-        </div>
-    </div>
-
-<script>
-    const pColors = ['#ff4757', '#1e90ff', '#2ed573', '#ffa502', '#9b59b6', '#ff6b81'];
-    const pIcons = ['🚀', '🛸', '🛰️', '👨‍🚀', '☄️', '👽'];
+  <div class="game-layout">
     
-    // 30 Cells layout around 9x8 grid
-    const boardLayout = [
-        { id: 0, name: "จุดเริ่มต้น", type: "corner", price: 0, icon: "🚩", grid: "8/9" },
-        { id: 1, name: "ดาวพุธ", type: "city", price: 50, icon: "🪐", grid: "8/8", group: 0 },
-        { id: 2, name: "ดาวศุกร์", type: "city", price: 60, icon: "🌟", grid: "8/7", group: 0 },
-        { id: 3, name: "โลก", type: "city", price: 80, icon: "🌍", grid: "8/6", group: 0 },
-        { id: 4, name: "สุ่มการ์ด", type: "chance", price: 0, icon: "🃏", grid: "8/5" },
-        { id: 5, name: "ดวงจันทร์", type: "city", price: 90, icon: "🌙", grid: "8/4", group: 0 },
-        { id: 6, name: "ดาวอังคาร", type: "city", price: 100, icon: "🔴", grid: "8/3", group: 0 },
-        { id: 7, name: "โฟบอส", type: "city", price: 110, icon: "☄️", grid: "8/2", group: 0 },
-        
-        { id: 8, name: "หลุมดำ", type: "corner", price: 0, icon: "🕳️", grid: "8/1" },
-        { id: 9, name: "ดาวพฤหัส", type: "city", price: 130, icon: "🟠", grid: "7/1", group: 1 },
-        { id: 10, name: "ไอโอ", type: "city", price: 140, icon: "🟡", grid: "6/1", group: 1 },
-        { id: 11, name: "ยูโรปา", type: "city", price: 150, icon: "⚪", grid: "5/1", group: 1 },
-        { id: 12, name: "แกนีมีด", type: "city", price: 160, icon: "🔘", grid: "4/1", group: 1 },
-        { id: 13, name: "คัลลิสโต", type: "city", price: 170, icon: "🟤", grid: "3/1", group: 1 },
-        { id: 14, name: "ดาวเสาร์", type: "city", price: 190, icon: "🪐", grid: "2/1", group: 1 },
-        
-        { id: 15, name: "งานเทศกาล", type: "corner", price: 0, icon: "🎉", grid: "1/1" },
-        { id: 16, name: "ไททัน", type: "city", price: 210, icon: "🌔", grid: "1/2", group: 2 },
-        { id: 17, name: "ดาวยูเรนัส", type: "city", price: 220, icon: "💎", grid: "1/3", group: 2 },
-        { id: 18, name: "มิแรนดา", type: "city", price: 230, icon: "❄️", grid: "1/4", group: 2 },
-        { id: 19, name: "สุ่มการ์ด", type: "chance", price: 0, icon: "🃏", grid: "1/5" },
-        { id: 20, name: "ดาวเนปจูน", type: "city", price: 250, icon: "🔵", grid: "1/6", group: 2 },
-        { id: 21, name: "ไทรทัน", type: "city", price: 260, icon: "🔮", grid: "1/7", group: 2 },
-        { id: 22, name: "ดาวพลูโต", type: "city", price: 280, icon: "❄️", grid: "1/8", group: 2 },
-        
-        { id: 23, name: "สถานีอวกาศ", type: "corner", price: 0, icon: "🛰️", grid: "1/9" },
-        { id: 24, name: "ซิริอุส", type: "city", price: 300, icon: "✨", grid: "2/9", group: 3 },
-        { id: 25, name: "เวกา", type: "city", price: 320, icon: "⭐", grid: "3/9", group: 3 },
-        { id: 26, name: "อัลฟาเซนทอรี", type: "city", price: 340, icon: "☀️", grid: "4/9", group: 3 },
-        { id: 27, name: "บีเทลจุส", type: "city", price: 360, icon: "💥", grid: "5/9", group: 3 },
-        { id: 28, name: "ไรเจล", type: "city", price: 380, icon: "🌟", grid: "6/9", group: 3 },
-        { id: 29, name: "ทางช้างเผือก", type: "city", price: 400, icon: "🌌", grid: "7/9", group: 3 }
-    ];
+    <!-- แผงแสดงเงินผู้เล่น 1 (นอกกระดาน - ฝั่งซ้าย) -->
+    <div class="player-sidebar">
+      <div class="player-card p1 active-turn">
+        <div class="player-avatar">🚀</div>
+        <span class="player-name">นักบิน 1</span>
+        <span class="player-money">548,000 $</span>
+      </div>
+    </div>
 
-    let players = [];
-    let cells = [];
-    let turn = 0;
-    let festivalCellId = -1;
-    let isSelectingSpace = false;
-    let spaceSelectionResolver = null;
+    <!-- กระดานเกมหลัก -->
+    <div class="board-container">
+      
+      <!-- แถวบนสุด -->
+      <div class="tile">
+        <span class="tile-name">จุดเริ่มต้น</span>
+        <span class="tile-icon">🚩</span>
+        <span class="tile-price">+20K</span>
+      </div>
 
-    function log(msg) {
-        const box = document.getElementById('log-box');
-        box.innerHTML = `<div>${msg}</div>` + box.innerHTML;
-    }
+      <div class="tile owner-p1">
+        <span class="tile-name">ดาวพุธ</span>
+        <span class="tile-icon">🪐</span>
+        <span class="tile-price">50K</span>
+        <div class="star-container level-1">
+          <span class="star-3d">★</span>
+        </div>
+      </div>
 
-    function startGame() {
-        const count = parseInt(document.getElementById('player-select').value);
-        players = [];
-        for(let i=0; i<count; i++) {
-            players.push({
-                id: i,
-                name: `นักบิน ${i+1}`,
-                color: pColors[i],
-                icon: pIcons[i],
-                money: 500, // 500K
-                pos: 0,
-                skipTurns: 0,
-                bankrupt: false
-            });
-        }
+      <div class="tile owner-p2">
+        <span class="tile-name">ดาวศุกร์</span>
+        <span class="tile-icon">🌕</span>
+        <span class="tile-price">60K</span>
+        <div class="star-container level-2">
+          <span class="star-3d">★</span><span class="star-3d">★</span>
+        </div>
+      </div>
 
-        cells = boardLayout.map(b => ({
-            ...b,
-            owner: null,
-            level: 0
-        }));
+      <div class="tile">
+        <span class="tile-name">โลก</span>
+        <span class="tile-icon">🌎</span>
+        <span class="tile-price">80K</span>
+        <div class="star-container"></div>
+      </div>
 
-        document.getElementById('start-screen').classList.remove('active');
-        document.getElementById('game-screen').classList.add('active');
+      <div class="tile owner-p1">
+        <span class="tile-name">ดวงจันทร์</span>
+        <span class="tile-icon">🌙</span>
+        <span class="tile-price">90K</span>
+        <div class="star-container level-3">
+          <span class="star-3d">★</span><span class="star-3d">★</span><span class="star-3d">★</span>
+        </div>
+      </div>
 
-        renderBoard();
-        updateStatus();
-        turn = 0;
-        checkTurn();
-    }
+      <!-- ฝั่งขวา -->
+      <div class="tile owner-p2">
+        <span class="tile-name">ดาวอังคาร</span>
+        <span class="tile-icon">🔴</span>
+        <span class="tile-price">100K</span>
+        <div class="star-container level-4">
+          <span class="star-3d">★</span><span class="star-3d">★</span><span class="star-3d">★</span><span class="star-3d">★</span>
+        </div>
+      </div>
 
-    function renderBoard() {
-        const board = document.getElementById('board');
-        const center = board.querySelector('.center-control');
-        board.innerHTML = '';
-        board.appendChild(center);
+      <!-- พื้นที่ตรงกลางกระดาน -->
+      <div class="board-center">
+        <div class="turn-indicator">ตาของ: 🚀 นักบิน 1</div>
+        <div class="dice-area">
+          <div class="dice">⚀</div>
+          <div class="dice">⚁</div>
+        </div>
+        <button class="roll-btn">ทอยลูกเต๋า</button>
+      </div>
 
-        cells.forEach(c => {
-            const div = document.createElement('div');
-            div.className = `cell ${c.type}`;
-            div.id = `cell-${c.id}`;
-            const [row, col] = c.grid.split('/');
-            div.style.gridRow = row;
-            div.style.gridColumn = col;
+      <div class="tile">
+        <span class="tile-name">ดาวพฤหัส</span>
+        <span class="tile-icon">🪐</span>
+        <span class="tile-price">130K</span>
+        <div class="star-container"></div>
+      </div>
 
-            if (c.type === 'city') {
-                div.innerHTML = `
-                    <div class="cell-owner-bar" id="obar-${c.id}"></div>
-                    <div class="cell-title">${c.icon} ${c.name}</div>
-                    <div class="cell-price">${c.price}K</div>
-                    <div class="cell-level" id="lvl-${c.id}"></div>
-                `;
-            } else {
-                div.innerHTML = `
-                    <div class="cell-title">${c.icon} ${c.name}</div>
-                    ${c.id === 0 ? '<div class="cell-price">+20K</div>' : ''}
-                `;
-            }
+      <div class="tile">
+        <span class="tile-name">ไอโอ</span>
+        <span class="tile-icon">🟡</span>
+        <span class="tile-price">140K</span>
+        <div class="star-container"></div>
+      </div>
 
-            const tokCont = document.createElement('div');
-            tokCont.className = 'tokens-container';
-            tokCont.id = `tokens-${c.id}`;
-            div.appendChild(tokCont);
+      <div class="tile owner-p1">
+        <span class="tile-name">ยูโรปา</span>
+        <span class="tile-icon">⚪</span>
+        <span class="tile-price">150K</span>
+        <div class="star-container level-2">
+          <span class="star-3d">★</span><span class="star-3d">★</span>
+        </div>
+      </div>
 
-            div.onclick = () => {
-                if(isSelectingSpace && spaceSelectionResolver) {
-                    spaceSelectionResolver(c.id);
-                }
-            };
+      <!-- แถวล่างสุด -->
+      <div class="tile">
+        <span class="tile-name">สถานีอวกาศ</span>
+        <span class="tile-icon">🛰️</span>
+        <span class="tile-price">วาป</span>
+      </div>
 
-            board.appendChild(div);
-        });
+      <div class="tile">
+        <span class="tile-name">ดาวพลูโต</span>
+        <span class="tile-icon">❄️</span>
+        <span class="tile-price">280K</span>
+        <div class="star-container"></div>
+      </div>
 
-        renderTokens();
-    }
+      <div class="tile">
+        <span class="tile-name">ไทรทัน</span>
+        <span class="tile-icon">🔮</span>
+        <span class="tile-price">260K</span>
+        <div class="star-container"></div>
+      </div>
 
-    function renderTokens() {
-        cells.forEach(c => {
-            const el = document.getElementById(`tokens-${c.id}`);
-            if(el) el.innerHTML = '';
-        });
+      <div class="tile owner-p2">
+        <span class="tile-name">ดาวเนปจูน</span>
+        <span class="tile-icon">🔵</span>
+        <span class="tile-price">250K</span>
+        <div class="star-container level-1">
+          <span class="star-3d">★</span>
+        </div>
+      </div>
 
-        players.forEach(p => {
-            if (p.bankrupt) return;
-            const tok = document.createElement('div');
-            tok.className = 'token';
-            tok.style.backgroundColor = p.color;
-            tok.title = p.name;
-            const parent = document.getElementById(`tokens-${p.pos}`);
-            if(parent) parent.appendChild(tok);
-        });
-    }
+      <div class="tile">
+        <span class="tile-name">หลุมดำ</span>
+        <span class="tile-icon">🕳️</span>
+        <span class="tile-price">ตกเกาะ</span>
+      </div>
 
-    function updateStatus() {
-        const list = document.getElementById('status-list');
-        list.innerHTML = '';
-        players.forEach((p, idx) => {
-            const card = document.createElement('div');
-            card.className = `player-card ${idx === turn ? 'active' : ''} ${p.bankrupt ? 'bankrupt' : ''}`;
-            card.style.borderLeftColor = p.color;
-            card.innerHTML = `<strong>${p.icon} ${p.name}</strong><br>${p.bankrupt ? 'ล้มละลาย' : p.money + 'K'}`;
-            list.appendChild(card);
-        });
+    </div>
 
-        const cur = players[turn];
-        const turnBadge = document.getElementById('turn-display');
-        turnBadge.innerText = `ตานี้ของ: ${cur.icon} ${cur.name}`;
-        turnBadge.style.color = cur.color;
-    }
+    <!-- แผงแสดงเงินผู้เล่น 2 (นอกกระดาน - ฝั่งขวา) -->
+    <div class="player-sidebar">
+      <div class="player-card p2">
+        <div class="player-avatar">🛸</div>
+        <span class="player-name">นักบิน 2</span>
+        <span class="player-money">232,000 $</span>
+      </div>
+    </div>
 
-    function updateCellUI(id) {
-        const c = cells[id];
-        if (c.type !== 'city') return;
-        const obar = document.getElementById(`obar-${c.id}`);
-        const lvl = document.getElementById(`lvl-${c.id}`);
-        const div = document.getElementById(`cell-${c.id}`);
+  </div>
 
-        if (c.owner !== null) {
-            obar.style.backgroundColor = players[c.owner].color;
-            lvl.innerText = c.level === 4 ? '👑 Landmark' : '⭐'.repeat(c.level);
-            
-            if(festivalCellId === c.id) {
-                div.style.boxShadow = `inset 0 0 12px ${players[c.owner].color}`;
-                if(!div.querySelector('.festival-indicator')) {
-                    div.innerHTML += `<div class="festival-indicator">🎉</div>`;
-                }
-            } else {
-                div.style.boxShadow = 'none';
-                const f = div.querySelector('.festival-indicator');
-                if(f) f.remove();
-            }
-        } else {
-            obar.style.backgroundColor = 'transparent';
-            lvl.innerText = '';
-            div.style.boxShadow = 'none';
-        }
-    }
-
-    function showModal(title, bodyText, buttons) {
-        return new Promise(resolve => {
-            document.getElementById('m-title').innerText = title;
-            document.getElementById('m-body').innerHTML = bodyText;
-            const btnBox = document.getElementById('m-btns');
-            btnBox.innerHTML = '';
-
-            buttons.forEach(b => {
-                const btn = document.createElement('button');
-                btn.className = `btn-opt ${b.type === 'cancel' ? 'cancel' : ''}`;
-                btn.innerText = b.text;
-                btn.onclick = () => {
-                    document.getElementById('modal-overlay').classList.remove('active');
-                    resolve(b.val);
-                };
-                btnBox.appendChild(btn);
-            });
-
-            document.getElementById('modal-overlay').classList.add('active');
-        });
-    }
-
-    function generateMathQuestion() {
-        const type = Math.floor(Math.random() * 4);
-        let x, a, b, eq, expl;
-
-        if (type === 0) {
-            x = Math.floor(Math.random() * 15) + 1;
-            a = Math.floor(Math.random() * 15) + 1;
-            b = x + a;
-            eq = `x + ${a} = ${b}`;
-            expl = `ย้าย ${a} ไปลบออกจาก ${b} ได้ x = ${x}`;
-        } else if (type === 1) {
-            a = Math.floor(Math.random() * 10) + 1;
-            b = Math.floor(Math.random() * 15) + 1;
-            x = a + b;
-            eq = `x - ${a} = ${b}`;
-            expl = `ย้าย ${a} ไปบวกกับ ${b} ได้ x = ${x}`;
-        } else if (type === 2) {
-            a = Math.floor(Math.random() * 8) + 2;
-            x = Math.floor(Math.random() * 10) + 1;
-            b = a * x;
-            eq = `${a} × x = ${b}`;
-            expl = `ย้าย ${a} ไปหาร ${b} ได้ x = ${x}`;
-        } else {
-            a = Math.floor(Math.random() * 4) + 2;
-            b = Math.floor(Math.random() * 8) + 1;
-            x = a * b;
-            eq = `x ÷ ${a} = ${b}`;
-            expl = `ย้าย ${a} ไปคูณกับ ${b} ได้ x = ${x}`;
-        }
-
-        let choices = new Set([x]);
-        while(choices.size < 4) {
-            let wr = x + (Math.floor(Math.random() * 7) - 3);
-            if(wr > 0 && wr !== x) choices.add(wr);
-        }
-        return { eq, ans: x, choices: Array.from(choices).sort(() => Math.random() - 0.5), expl };
-    }
-
-    function askMath() {
-        return new Promise(resolve => {
-            const q = generateMathQuestion();
-            document.getElementById('math-eq').innerText = q.eq;
-            document.getElementById('math-explanation').innerText = '';
-            const grid = document.getElementById('math-grid');
-            grid.innerHTML = '';
-
-            let done = false;
-            q.choices.forEach(ch => {
-                const btn = document.createElement('button');
-                btn.className = 'btn-math';
-                btn.innerText = `x = ${ch}`;
-                btn.onclick = async () => {
-                    if (done) return;
-                    done = true;
-                    const expDiv = document.getElementById('math-explanation');
-                    if (ch === q.ans) {
-                        btn.style.background = 'var(--green)';
-                        expDiv.style.color = 'var(--green)';
-                        expDiv.innerText = '✨ ถูกต้อง! ได้รับสิทธิ์ในการทำรายการ';
-                        await new Promise(r => setTimeout(r, 1200));
-                        document.getElementById('math-overlay').classList.remove('active');
-                        resolve(true);
-                    } else {
-                        btn.style.background = 'var(--red)';
-                        expDiv.style.color = 'var(--red)';
-                        expDiv.innerText = `❌ คำตอบไม่ถูกต้อง! (${q.expl})`;
-                        await new Promise(r => setTimeout(r, 2500));
-                        document.getElementById('math-overlay').classList.remove('active');
-                        resolve(false);
-                    }
-                };
-                grid.appendChild(btn);
-            });
-
-            document.getElementById('math-overlay').classList.add('active');
-        });
-    }
-
-    async function checkTurn() {
-        if (checkWin()) return;
-        const p = players[turn];
-        if (p.bankrupt) {
-            endTurn();
-            return;
-        }
-        if (p.skipTurns > 0) {
-            p.skipTurns--;
-            await showModal("ติดหลุมดำ 🕳️", `${p.icon} ${p.name} ยานขัดข้อง ต้องงดเดินตานี้ (เหลือพักอีก ${p.skipTurns} ตา)`, [{text: "รับทราบ", val: 1}]);
-            endTurn();
-            return;
-        }
-        document.getElementById('btn-roll').disabled = false;
-        updateStatus();
-    }
-
-    async function rollDice() {
-        document.getElementById('btn-roll').disabled = true;
-        const d1 = Math.floor(Math.random() * 6) + 1;
-        const d2 = Math.floor(Math.random() * 6) + 1;
-        const total = d1 + d2;
-
-        const diceGfx = ['⚀','⚁','⚂','⚃','⚄','⚅'];
-        for(let i=0; i<8; i++) {
-            document.getElementById('d1').innerText = diceGfx[Math.floor(Math.random()*6)];
-            document.getElementById('d2').innerText = diceGfx[Math.floor(Math.random()*6)];
-            await new Promise(r => setTimeout(r, 80));
-        }
-        document.getElementById('d1').innerText = diceGfx[d1-1];
-        document.getElementById('d2').innerText = diceGfx[d2-1];
-
-        log(`${players[turn].name} ทอยได้ ${total} แต้ม (${d1}+${d2})`);
-        await stepPlayer(total);
-    }
-
-    async function stepPlayer(steps) {
-        const p = players[turn];
-        for(let i=0; i<steps; i++) {
-            p.pos = (p.pos + 1) % 30;
-            if (p.pos === 0) {
-                p.money += 20;
-                log(`${p.name} ผ่านจุดเริ่มต้น ได้รับเงินทุน +20K`);
-                updateStatus();
-            }
-            renderTokens();
-            await new Promise(r => setTimeout(r, 180));
-        }
-        await evaluateSpace();
-    }
-
-    async function evaluateSpace() {
-        const p = players[turn];
-        const c = cells[p.pos];
-
-        if (c.type === 'corner') {
-            if (c.id === 8) {
-                p.skipTurns = 2;
-                await showModal("ตกลงไปในหลุมดำ! 🕳️", "ยานของคุณหลงในมิติอวกาศ ต้องงดเดิน 2 ตา", [{text: "รับทราบ", val: 1}]);
-            } else if (c.id === 15) {
-                await handleFestival(p);
-            } else if (c.id === 23) {
-                await handleSpaceStation(p);
-                return;
-            }
-        } else if (c.type === 'chance') {
-            await handleChanceCard(p);
-        } else if (c.type === 'city') {
-            await handleCitySpace(p, c);
-        }
-
-        endTurn();
-    }
-
-    async function handleFestival(p) {
-        const myCities = cells.filter(c => c.owner === p.id);
-        if (myCities.length === 0) {
-            await showModal("งานเทศกาลอวกาศ 🎉", "คุณยังไม่มีดาวสำหรับจัดงานเทศกาล", [{text: "ตกลง", val: 1}]);
-            return;
-        }
-
-        await showModal("งานเทศกาลอวกาศ 🎉", "โปรดเลือกดาวของคุณบนกระดาน 1 ดวง เพื่อจัดงาน (เพิ่มค่าผ่านทาง 2 เท่า!)", [{text: "เลือกดาว", val: 1}]);
-        isSelectingSpace = true;
-        myCities.forEach(c => document.getElementById(`cell-${c.id}`).classList.add('highlight'));
-
-        const selectedId = await new Promise(resolve => { spaceSelectionResolver = resolve; });
-        
-        isSelectingSpace = false;
-        spaceSelectionResolver = null;
-        cells.forEach(c => document.getElementById(`cell-${c.id}`).classList.remove('highlight'));
-
-        if (cells[selectedId].owner === p.id) {
-            festivalCellId = selectedId;
-            log(`${p.name} จัดงานเทศกาลที่ดาว ${cells[selectedId].name}!`);
-            cells.forEach(c => updateCellUI(c.id));
-        } else {
-            await showModal("แจ้งเตือน", "ไม่ได้เลือกดาวของคุณ งานเทศกาลจึงยกเลิกในตานี้", [{text: "ตกลง", val: 1}]);
-        }
-    }
-
-    async function handleSpaceStation(p) {
-        await showModal("สถานีอวกาศ 🛰️", "คุณสามารถเลือกวาร์ปไปยังช่องใดก็ได้บนกระดาน!", [{text: "เลือกช่อง", val: 1}]);
-        isSelectingSpace = true;
-        cells.forEach(c => document.getElementById(`cell-${c.id}`).classList.add('highlight'));
-
-        const targetId = await new Promise(resolve => { spaceSelectionResolver = resolve; });
-
-        isSelectingSpace = false;
-        spaceSelectionResolver = null;
-        cells.forEach(c => document.getElementById(`cell-${c.id}`).classList.remove('highlight'));
-
-        p.pos = targetId;
-        renderTokens();
-        log(`${p.name} วาร์ปไปที่ ${cells[targetId].name}`);
-        await evaluateSpace();
-    }
-
-    async function handleChanceCard(p) {
-        const cards = [
-            { t: "+", m: 30, text: "ได้รับทุนสนับสนุนการสำรวจอวกาศ +30K" },
-            { t: "+", m: 50, text: "ขุดพบแร่พลังงานควอนตัม ขายได้ +50K" },
-            { t: "-", m: 20, text: "อุกกาบาตชนอุปกรณ์ดาวเทียม เสียค่าซ่อม -20K" },
-            { t: "-", m: 30, text: "จ่ายค่าเชื้อเพลิงฉุกเฉิน -30K" }
-        ];
-        const card = cards[Math.floor(Math.random() * cards.length)];
-        await showModal("การ์ดเสี่ยงโชคอวกาศ 🃏", card.text, [{text: "ตกลง", val: 1}]);
-
-        if (card.t === '+') p.money += card.m;
-        else p.money -= card.m;
-
-        updateStatus();
-        if (p.money < 0) await checkBankruptcy(p, null);
-    }
-
-    async function handleCitySpace(p, c) {
-        if (c.owner === null) {
-            const act = await showModal("ค้นพบดาวดวงใหม่ 🪐", `ดาว <b>${c.name}</b> ยังไม่มีเจ้าของ<br>ราคาซื้อ: ${c.price}K<br>ต้องการแก้สมการเพื่อซื้อหรือไม่?`, [
-                {text: "แก้สมการซื้อ", val: 'buy'},
-                {text: "ข้าม", val: 'pass', type: 'cancel'}
-            ]);
-
-            if (act === 'buy') {
-                if (p.money >= c.price) {
-                    const ok = await askMath();
-                    if (ok) {
-                        p.money -= c.price;
-                        c.owner = p.id;
-                        c.level = 1;
-                        log(`${p.name} ครอบครองดาว ${c.name}`);
-                        updateCellUI(c.id);
-                        updateStatus();
-                    }
-                } else {
-                    await showModal("เงินไม่พอ 💸", "คุณมีเงินไม่พอสำหรับซื้อดาวดวงนี้", [{text: "ตกลง", val: 1}]);
-                }
-            }
-        } else if (c.owner === p.id) {
-            if (c.level < 4) {
-                const upPrice = Math.floor(c.price * 0.8);
-                const nextLvlName = c.level === 3 ? "Landmark (ขั้นสูงสุด)" : `ขั้น ${c.level + 1}`;
-                const act = await showModal("อัปเกรดเมือง 🏗️", `ดาว <b>${c.name}</b> เป็นของคุณ<br>ต้องการอัปเกรดเป็น ${nextLvlName} (ราคา ${upPrice}K) หรือไม่?`, [
-                    {text: "แก้สมการอัปเกรด", val: 'up'},
-                    {text: "ข้าม", val: 'pass', type: 'cancel'}
-                ]);
-
-                if (act === 'up') {
-                    if (p.money >= upPrice) {
-                        const ok = await askMath();
-                        if (ok) {
-                            p.money -= upPrice;
-                            c.level += 1;
-                            log(`${p.name} อัปเกรดดาว ${c.name} เป็นขั้น ${c.level}`);
-                            updateCellUI(c.id);
-                            updateStatus();
-                        }
-                    } else {
-                        await showModal("เงินไม่พอ 💸", "คุณมีเงินไม่พอสำหรับอัปเกรด", [{text: "ตกลง", val: 1}]);
-                    }
-                }
-            } else {
-                log(`${p.name} แวะพักที่ Landmark ของตัวเอง`);
-            }
-        } else {
-            let rent = Math.floor(c.price * (0.4 * c.level));
-            if (c.level === 4) rent = c.price * 2;
-            if (festivalCellId === c.id) rent *= 2;
-
-            const owner = players[c.owner];
-            await showModal("จ่ายค่าผ่านทาง 💸", `คุณตกบนดาวของ ${owner.icon} ${owner.name}<br>ต้องจ่ายค่าผ่านทาง <b>${rent}K</b>`, [{text: "จ่ายเงิน", val: 1}]);
-
-            p.money -= rent;
-            owner.money += rent;
-            updateStatus();
-
-            if (p.money < 0) {
-                await checkBankruptcy(p, owner);
-                return;
-            }
-
-            if (c.level < 4) {
-                const takeoverPrice = c.price * 2;
-                const act = await showModal("ซื้อต่อดาว (Takeover) 🚀", `คุณต้องการแก้สมการเพื่อซื้อต่อดาว <b>${c.name}</b> ในราคา ${takeoverPrice}K หรือไม่?`, [
-                    {text: "แก้สมการซื้อต่อ", val: 'take'},
-                    {text: "ไม่ซื้อต่อ", val: 'pass', type: 'cancel'}
-                ]);
-
-                if (act === 'take') {
-                    if (p.money >= takeoverPrice) {
-                        const ok = await askMath();
-                        if (ok) {
-                            p.money -= takeoverPrice;
-                            owner.money += takeoverPrice;
-                            c.owner = p.id;
-                            log(`${p.name} ซื้อต่อดาว ${c.name} มาจาก ${owner.name}!`);
-                            updateCellUI(c.id);
-                            updateStatus();
-                        }
-                    } else {
-                        await showModal("เงินไม่พอ 💸", "คุณมีเงินไม่พอซื้อต่อดาวดวงนี้", [{text: "ตกลง", val: 1}]);
-                    }
-                }
-            }
-        }
-    }
-
-    async function checkBankruptcy(p, creditor) {
-        p.bankrupt = true;
-        log(`${p.name} ล้มละลายแล้ว!`);
-        
-        cells.forEach(c => {
-            if (c.owner === p.id) {
-                c.owner = null;
-                c.level = 0;
-                updateCellUI(c.id);
-            }
-        });
-        if (festivalCellId !== -1 && cells[festivalCellId].owner === null) {
-            festivalCellId = -1;
-        }
-
-        renderTokens();
-        updateStatus();
-        await showModal("ล้มละลาย! 💥", `${p.icon} ${p.name} เงินหมดกระเป๋า และต้องออกจากเกม`, [{text: "ตกลง", val: 1}]);
-    }
-
-    function checkWin() {
-        const active = players.filter(p => !p.bankrupt);
-        if (active.length === 1) {
-            announceWinner(active[0], "ผู้เล่นคนอื่นล้มละลายทั้งหมด!");
-            return true;
-        }
-
-        for (let p of active) {
-            for (let g = 0; g < 4; g++) {
-                const groupCities = cells.filter(c => c.type === 'city' && c.group === g);
-                if (groupCities.length > 0 && groupCities.every(c => c.owner === p.id)) {
-                    announceWinner(p, `ยึดครองดาวได้ครบทั้งแถว (Line Monopoly - แถบที่ ${g+1})!`);
-                    return true;
-                }
-            }
-
-            let countConsec = 0;
-            let setsCount = 0;
-            for (let c of cells) {
-                if (c.type === 'city' && c.owner === p.id) {
-                    countConsec++;
-                    if (countConsec === 3) {
-                        setsCount++;
-                        countConsec = 0;
-                    }
-                } else {
-                    countConsec = 0;
-                }
-            }
-            if (setsCount >= 3) {
-                announceWinner(p, "ยึดครองดาวติดกัน 3 เมืองครบ 3 จุด (Triple Monopoly)!");
-                return true;
-            }
-        }
-        return false;
-    }
-
-    async function announceWinner(p, reason) {
-        await showModal("🏆 ผู้ชนะการแข่งขัน! 🏆", `ขอแสดงความยินดีกับ <b>${p.icon} ${p.name}</b><br>${reason}`, [{text: "เล่นใหม่อีกครั้ง", val: 'again'}]);
-        location.reload();
-    }
-
-    function endTurn() {
-        if (checkWin()) return;
-        do {
-            turn = (turn + 1) % players.length;
-        } while (players[turn].bankrupt);
-        checkTurn();
-    }
-</script>
 </body>
 </html>
