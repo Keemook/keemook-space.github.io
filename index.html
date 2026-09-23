@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;800&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <script>
         tailwind.config = {
@@ -77,14 +79,14 @@
 
         /* Dice 3D Effect */
         .dice {
-            width: 52px;
-            height: 52px;
+            width: 48px;
+            height: 48px;
             background: #ffffff;
             border-radius: 12px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 800;
             color: #0f172a;
             box-shadow: 0 6px 14px rgba(0,0,0,0.6), inset 0 0 8px rgba(0,0,0,0.15);
@@ -152,7 +154,7 @@
         <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
             <div class="bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-700 text-xs sm:text-sm flex items-center gap-2">
                 <i class="fa-solid fa-hourglass-half text-neonYellow"></i>
-                <span>รอบที่: <strong id="currentRoundText" class="text-neonYellow">1</strong> / 30</span>
+                <span>รอบที่: <strong id="currentRoundText" class="text-neonYellow">1</strong> / <span id="maxRoundText">30</span></span>
             </div>
 
             <button onclick="toggleSound()" id="soundBtn" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
@@ -164,7 +166,7 @@
             </button>
 
             <button onclick="confirmRestartGame()" class="bg-rose-900/60 hover:bg-rose-800 border border-rose-500/50 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium transition flex items-center gap-1.5 text-rose-200">
-                <i class="fa-solid fa-rotate-left"></i> เริ่มใหม่
+                <i class="fa-solid fa-rotate-left"></i> ตั้งค่าใหม่
             </button>
         </div>
     </header>
@@ -184,24 +186,24 @@
                     <!-- Current Turn Header -->
                     <div class="w-full flex justify-between items-center z-10 border-b border-slate-700/60 pb-2">
                         <div class="flex items-center gap-2">
-                            <span id="turnAvatar" class="text-2xl sm:text-3xl">👨‍🚀</span>
+                            <span id="turnAvatar" class="text-2xl sm:text-3xl">👨‍✈️</span>
                             <div>
                                 <div class="text-[10px] text-slate-400 uppercase tracking-widest">ตานี้ของผู้เล่น</div>
-                                <div id="turnPlayerName" class="font-extrabold text-sm sm:text-base text-neonCyan">แคปเทนแอสโทร</div>
+                                <div id="turnPlayerName" class="font-extrabold text-sm sm:text-base text-neonCyan">ผู้การโอไรออน</div>
                             </div>
                         </div>
-                        <div id="turnSkillBadge" class="text-[11px] bg-slate-900/80 text-cyan-300 border border-cyan-500/30 px-2.5 py-1 rounded-full flex items-center gap-1">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> สกิล: Dice Master
+                        <div id="turnSkillBadge" class="text-[10px] sm:text-[11px] bg-slate-900/80 text-cyan-300 border border-cyan-500/30 px-2.5 py-1 rounded-full flex items-center gap-1 max-w-[180px] truncate">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> <span id="turnSkillText">ส่วนลดซื้อดาว 10%</span>
                         </div>
                     </div>
 
                     <!-- Dice Display & Roll Controls -->
-                    <div class="my-3 flex flex-col items-center gap-3 z-10">
+                    <div class="my-2 flex flex-col items-center gap-2.5 z-10">
                         <div class="flex gap-4 items-center">
                             <div id="dice1" class="dice dice-cyan">1</div>
                             <div id="dice2" class="dice dice-gold">1</div>
                         </div>
-                        <div id="diceSumText" class="text-xs sm:text-sm font-semibold text-slate-300 h-5">
+                        <div id="diceSumText" class="text-xs sm:text-sm font-semibold text-slate-300 h-5 text-center">
                             กดปุ่ม "ทอยลูกเต๋า" เพื่อเริ่มเคลื่อนที่!
                         </div>
 
@@ -210,14 +212,14 @@
                                 <i class="fa-solid fa-dice text-xl"></i> ทอยลูกเต๋า
                             </button>
                             <button id="autoBotToggleBtn" onclick="toggleAutoBotSpeed()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs px-3 py-2 rounded-xl text-slate-300 transition flex items-center gap-1">
-                                <i class="fa-solid fa-bolt text-neonYellow"></i> บอทเร็ว: <span id="autoBotStatusText">ปกติ</span>
+                                <i class="fa-solid fa-bolt text-neonYellow"></i> ความเร็วบอท: <span id="autoBotStatusText">ปกติ</span>
                             </button>
                         </div>
                     </div>
 
                     <!-- Activity Log Feed -->
-                    <div class="w-full bg-slate-950/80 rounded-xl p-2.5 border border-slate-800 text-xs z-10 h-24 sm:h-28 overflow-y-auto flex flex-col gap-1.5" id="gameLog">
-                        <div class="text-cyan-400 italic text-[11px]"><i class="fa-solid fa-circle-info"></i> ยินดีต้อนรับสู่เกมเศรษฐีการแก้สมการอวกาศ! พร้อมออกสำรวจดวงดาวหรือยัง?</div>
+                    <div class="w-full bg-slate-950/80 rounded-xl p-2.5 border border-slate-800 text-xs z-10 h-20 sm:h-24 overflow-y-auto flex flex-col gap-1.5" id="gameLog">
+                        <div class="text-cyan-400 italic text-[11px]"><i class="fa-solid fa-circle-info"></i> ยินดีต้อนรับสู่เกมเศรษฐีการแก้สมการอวกาศ! เลือกตัวละครแล้วเริ่มผจญภัยได้เลย</div>
                     </div>
                 </div>
             </div>
@@ -231,7 +233,7 @@
                     <span class="text-[11px] text-slate-400">เครดิตอวกาศ 🪙</span>
                 </h2>
 
-                <div id="playerListContainer" class="flex flex-col gap-2.5">
+                <div id="playerListContainer" class="flex flex-col gap-2.5 max-h-[420px] overflow-y-auto pr-1">
                     <!-- Dynamic Player Cards rendered by JS -->
                 </div>
             </div>
@@ -242,7 +244,7 @@
                     <i class="fa-solid fa-lightbulb text-neonYellow"></i> หลักการแก้สมการง่ายๆ:
                 </div>
                 <p class="text-[11px] text-slate-300 leading-relaxed">
-                    ย้ายข้างด้วยเครื่องหมายตรงข้าม: บวก (+) เป็น ลบ (-), ลบ (-) เป็น บวก (+), คูณ (×) เป็น หาร (÷) และอย่าลืมคำนวณในวงเล็บก่อนเสมอ!
+                    ย้ายข้างด้วยเครื่องหมายตรงข้าม: บวก (+) เป็น ลบ (-), ลบ (-) เป็น บวก (+), คูณ (×) เป็น หาร (÷) และทำในวงเล็บก่อนเสมอ!
                 </p>
             </div>
         </section>
@@ -251,59 +253,74 @@
 
     <!-- MODAL 1: START & GAME SETUP SCREEN -->
     <div id="setupModal" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-        <div class="bg-spaceCard border-2 border-neonCyan/60 rounded-3xl p-5 sm:p-7 max-w-3xl w-full shadow-2xl relative my-auto">
-            <div class="text-center mb-5">
+        <div class="bg-spaceCard border-2 border-neonCyan/60 rounded-3xl p-4 sm:p-6 max-w-4xl w-full shadow-2xl relative my-auto">
+            <div class="text-center mb-4">
                 <div class="inline-block bg-gradient-to-r from-neonCyan via-indigo-300 to-neonPink bg-clip-text text-transparent font-black text-2xl sm:text-4xl mb-1">
                     🚀 SPACE EQUATION MONOPOLY
                 </div>
-                <p class="text-slate-300 text-xs sm:text-sm">เกมเศรษฐีการแก้สมการอวกาศ สนุก ได้ความรู้ เก่งคณิตศาสตร์</p>
+                <p class="text-slate-300 text-xs sm:text-sm">เกมเศรษฐีการแก้สมการอวกาศ ป.4 - ป.6 สนุก ได้ความรู้ เก่งคณิตศาสตร์</p>
             </div>
 
-            <!-- Grade Selector -->
-            <div class="mb-4 bg-slate-900/80 p-3.5 rounded-2xl border border-slate-700">
-                <label class="block text-xs sm:text-sm font-bold text-neonCyan mb-2 flex items-center gap-2">
-                    <i class="fa-solid fa-graduation-cap"></i> 1. เลือกระดับชั้นเรียน (ระดับความยากสมการ):
-                </label>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    <button type="button" onclick="selectGrade('p4')" id="gradeBtn_p4" class="grade-select-btn p-3 rounded-xl border border-slate-600 bg-slate-800 text-left hover:border-cyan-400 transition text-xs">
-                        <div class="font-bold text-cyan-300 text-sm">ประถมศึกษาปีที่ 4</div>
-                        <div class="text-[11px] text-slate-400 mt-1">สมการขั้นตอนเดียว (x + 15 = 42, 4x = 36)</div>
-                    </button>
-                    <button type="button" onclick="selectGrade('p5')" id="gradeBtn_p5" class="grade-select-btn p-3 rounded-xl border border-slate-600 bg-slate-800 text-left hover:border-cyan-400 transition text-xs">
-                        <div class="font-bold text-indigo-300 text-sm">ประถมศึกษาปีที่ 5</div>
-                        <div class="text-[11px] text-slate-400 mt-1">สมการสองขั้นตอน (2x + 10 = 30, 3x - 5 = 16)</div>
-                    </button>
-                    <button type="button" onclick="selectGrade('p6')" id="gradeBtn_p6" class="grade-select-btn p-3 rounded-xl border border-slate-600 bg-slate-800 text-left hover:border-cyan-400 transition text-xs">
-                        <div class="font-bold text-pink-300 text-sm">ประถมศึกษาปีที่ 6</div>
-                        <div class="text-[11px] text-slate-400 mt-1">สมการวงเล็บ/สองข้าง (4(x-3)=24, 3x+15=2x+25)</div>
-                    </button>
+            <!-- Grade & Game Rules Selector -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                <div class="md:col-span-2 bg-slate-900/80 p-3 rounded-2xl border border-slate-700">
+                    <label class="block text-xs font-bold text-neonCyan mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-graduation-cap"></i> 1. เลือกระดับชั้นเรียน (ระดับความยากสมการ):
+                    </label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" onclick="selectGrade('p4')" id="gradeBtn_p4" class="grade-select-btn p-2.5 rounded-xl border border-slate-600 bg-slate-800 text-left hover:border-cyan-400 transition text-xs">
+                            <div class="font-bold text-cyan-300 text-xs sm:text-sm">ป.4</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5 leading-tight">สมการ 1 ขั้น (x + 15 = 42, 4x = 36)</div>
+                        </button>
+                        <button type="button" onclick="selectGrade('p5')" id="gradeBtn_p5" class="grade-select-btn p-2.5 rounded-xl border border-slate-600 bg-slate-800 text-left hover:border-cyan-400 transition text-xs">
+                            <div class="font-bold text-indigo-300 text-xs sm:text-sm">ป.5</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5 leading-tight">สมการ 2 ขั้น (2x + 10 = 30, 3x - 5 = 16)</div>
+                        </button>
+                        <button type="button" onclick="selectGrade('p6')" id="gradeBtn_p6" class="grade-select-btn p-2.5 rounded-xl border border-slate-600 bg-slate-800 text-left hover:border-cyan-400 transition text-xs">
+                            <div class="font-bold text-pink-300 text-xs sm:text-sm">ป.6</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5 leading-tight">สมการวงเล็บ/สองข้าง (4(x-3)=24, 3x+15=2x+25)</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/80 p-3 rounded-2xl border border-slate-700">
+                    <label class="block text-xs font-bold text-neonYellow mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-flag-checkered"></i> 2. จำนวนรอบการเล่น:
+                    </label>
+                    <select id="maxRoundsSelect" class="w-full bg-slate-800 border border-slate-600 rounded-xl p-2 text-xs text-slate-200 font-bold focus:outline-none focus:border-cyan-400">
+                        <option value="15">15 รอบ (กระชับสั้น)</option>
+                        <option value="20">20 รอบ (ปานกลาง)</option>
+                        <option value="30" selected>30 รอบ (มาตรฐาน)</option>
+                        <option value="50">50 รอบ (มาราธอน)</option>
+                    </select>
                 </div>
             </div>
 
             <!-- Player Setup & Customization -->
-            <div class="mb-5 bg-slate-900/80 p-3.5 rounded-2xl border border-slate-700">
-                <div class="flex justify-between items-center mb-3">
-                    <label class="text-xs sm:text-sm font-bold text-neonYellow flex items-center gap-2">
-                        <i class="fa-solid fa-users"></i> 2. กำหนดผู้เล่นและตกแต่ง (1 - 6 คน):
+            <div class="mb-4 bg-slate-900/80 p-3 rounded-2xl border border-slate-700">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-xs font-bold text-neonGreen flex items-center gap-2">
+                        <i class="fa-solid fa-users"></i> 3. กำหนดผู้เล่นและตั้งชื่อ (1 - 6 คน):
                     </label>
                     <div class="flex items-center gap-2">
-                        <button onclick="changePlayerSetupCount(-1)" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 text-lg font-bold flex items-center justify-center">-</button>
-                        <span id="setupPlayerCountText" class="font-bold text-lg text-neonCyan w-6 text-center">4</span>
-                        <button onclick="changePlayerSetupCount(1)" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 text-lg font-bold flex items-center justify-center">+</button>
+                        <span class="text-xs text-slate-400">จำนวนผู้เล่น:</span>
+                        <button onclick="changePlayerSetupCount(-1)" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 text-base font-bold flex items-center justify-center">-</button>
+                        <span id="setupPlayerCountText" class="font-bold text-base text-neonCyan w-5 text-center">4</span>
+                        <button onclick="changePlayerSetupCount(1)" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 text-base font-bold flex items-center justify-center">+</button>
                     </div>
                 </div>
 
-                <div id="setupPlayerList" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-56 overflow-y-auto pr-1">
+                <div id="setupPlayerList" class="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-[260px] overflow-y-auto pr-1">
                     <!-- Populated dynamically by JS -->
                 </div>
             </div>
 
             <!-- Action buttons -->
             <div class="flex flex-col sm:flex-row gap-3 items-center justify-between pt-1">
-                <button onclick="openRulebookModal()" class="w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl text-xs font-semibold text-slate-300 flex items-center justify-center gap-2">
+                <button onclick="openRulebookModal()" class="w-full sm:w-auto px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl text-xs font-semibold text-slate-300 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-book"></i> กฎการเล่น & ชัยชนะ
                 </button>
-                <button onclick="startGameEngine()" class="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-neonCyan via-blue-600 to-neonPink hover:from-cyan-400 hover:to-pink-500 text-slate-950 font-black text-lg rounded-2xl shadow-xl transform active:scale-95 transition flex items-center justify-center gap-2">
+                <button onclick="startGameEngine()" class="w-full sm:w-auto px-8 py-2.5 bg-gradient-to-r from-neonCyan via-blue-600 to-neonPink hover:from-cyan-400 hover:to-pink-500 text-slate-950 font-black text-base rounded-xl shadow-xl transform active:scale-95 transition flex items-center justify-center gap-2">
                     <i class="fa-solid fa-play"></i> เริ่มออกสำรวจอวกาศ!
                 </button>
             </div>
@@ -315,9 +332,9 @@
         <div class="bg-spaceCard border-2 border-neonCyan rounded-3xl p-5 sm:p-7 max-w-2xl w-full shadow-2xl relative my-auto">
             <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4">
                 <div class="flex items-center gap-2.5">
-                    <span class="text-3xl" id="eqPlayerAvatar">👨‍🚀</span>
+                    <span class="text-3xl" id="eqPlayerAvatar">👨‍✈️</span>
                     <div>
-                        <div id="eqPlayerName" class="font-bold text-sm text-neonCyan">แคปเทนแอสโทร</div>
+                        <div id="eqPlayerName" class="font-bold text-sm text-neonCyan">ผู้การโอไรออน</div>
                         <div id="eqActionTypeTitle" class="text-xs text-slate-300">ภารกิจแก้สมการเพื่อซื้อ: ดาวพุธ</div>
                     </div>
                 </div>
@@ -332,7 +349,7 @@
                 <div id="equationQuestionText" class="text-3xl sm:text-4xl font-black text-neonYellow my-3 font-mono tracking-wider">
                     x + 15 = 42
                 </div>
-                <div class="text-[11px] text-slate-400">เลือกคำตอบที่ถูกต้องเพื่อครอบครองดวงดาว</div>
+                <div class="text-[11px] text-slate-400">เลือกคำตอบที่ถูกต้องเพื่อดำเนินการสำเร็จ</div>
             </div>
 
             <!-- 4 Options Grid -->
@@ -358,7 +375,7 @@
     <!-- MODAL 3: WARP STATION / WORLD TOUR SELECTION MODAL -->
     <div id="warpModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 hidden">
         <div class="bg-spaceCard border-2 border-neonPink rounded-3xl p-5 sm:p-7 max-w-3xl w-full shadow-2xl relative my-auto">
-            <h3 class="text-xl font-extrabold text-neonPink mb-2 flex items-center gap-2">
+            <h3 class="text-xl font-extrabold text-neonPink mb-1 flex items-center gap-2">
                 <i class="fa-solid fa-shuttle-space"></i> วาร์ปสเตชั่น / ท่องอวกาศ (Warp Station)
             </h3>
             <p class="text-xs text-slate-300 mb-4">เลือกช่องดวงดาวที่คุณต้องการเดินทางวาร์ปไปลงทันที!</p>
@@ -382,7 +399,7 @@
                     <span class="text-[10px] bg-purple-950 px-2 py-0.5 rounded text-purple-300">ฟรี (ต้องทอยได้เลขคู่)</span>
                 </button>
                 <button onclick="handleBlackHoleChoice('pay')" class="p-3 bg-slate-800 hover:bg-slate-700 border border-amber-500/50 rounded-xl text-xs sm:text-sm font-bold text-amber-200 transition flex items-center justify-between">
-                    <span><i class="fa-solid fa-coins me-2"></i> 2. จ่ายค่าปรับอวกาศ 1,000 🪙</span>
+                    <span><i class="fa-solid fa-coins me-2"></i> 2. จ่ายค่าปรับอวกาศ <span id="blackHoleFeeText">1,000</span> 🪙</span>
                     <span class="text-[10px] bg-amber-950 px-2 py-0.5 rounded text-amber-300">ออกทันที</span>
                 </button>
                 <button id="useEscapeCardBtn" onclick="handleBlackHoleChoice('card')" class="p-3 bg-slate-800 hover:bg-slate-700 border border-cyan-500/50 rounded-xl text-xs sm:text-sm font-bold text-cyan-200 transition flex items-center justify-between">
@@ -426,14 +443,8 @@
                 </div>
 
                 <div>
-                    <h4 class="font-bold text-neonYellow text-sm mb-1">🎲 ช่องเดินพิเศษบนกระดาน:</h4>
-                    <ul class="list-disc list-inside space-y-1 pl-2">
-                        <li><strong>จุดเริ่มต้น (Start):</strong> ได้รับเงินเดือน 2,000 🪙 ทุกครั้งที่เดินผ่านหรือตก</li>
-                        <li><strong>หลุมดำ (Black Hole):</strong> ติดอยู่ 3 ตา เลือกทอยเบิ้ล, จ่าย 1,000 🪙 หรือใช้การ์ดหนี</li>
-                        <li><strong>วาร์ปสเตชั่น (Warp Station):</strong> เลือกบินไปตกช่องใดก็ได้บนกระดานทันที</li>
-                        <li><strong>ดวงอวกาศ (Chance):</strong> สุ่มการ์ดเหตุการณ์ (โบนัสเงิน, เสียเงินซ่อมยาน, ได้การ์ดหนี)</li>
-                        <li><strong>ภาษีอวกาศ (Tax):</strong> จ่ายภาษี 10% ของเงินสด หรือ 1,500 🪙</li>
-                    </ul>
+                    <h4 class="font-bold text-neonYellow text-sm mb-1">🎲 ขั้นการอัปเกรดดาว (4 ขั้น):</h4>
+                    <p class="mb-1 text-slate-400">1. ⛺ โดม $\rightarrow$ 2. 🛰️ ฐานการค้า $\rightarrow$ 3. 🏙️ รีสอร์ต $\rightarrow$ 4. 🏰 แลนด์มาร์ก</p>
                 </div>
 
                 <div>
@@ -453,7 +464,7 @@
                         </div>
                         <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-700">
                             <strong class="text-emerald-400">4. Tourist Victory:</strong>
-                            <p class="text-[11px] text-slate-400">ครอบครองสถานที่ท่องเที่ยวอวกาศครบทั้ง 3 แห่ง</p>
+                            <p class="text-[11px] text-slate-400">ครอบครองสถานที่ขนส่งอวกาศครบทั้ง 3 แห่ง</p>
                         </div>
                     </div>
                 </div>
@@ -470,27 +481,27 @@
         <div class="bg-spaceCard border-2 border-neonYellow rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl text-center my-auto relative">
             <div class="text-4xl sm:text-5xl mb-2 animate-bounce">🏆</div>
             <h2 class="text-2xl sm:text-4xl font-black text-neonYellow mb-1">สรุปผลการแข่งขันอวกาศ!</h2>
-            <div id="victoryReasonText" class="text-sm text-cyan-300 mb-6 font-semibold">ชนะด้วยเงื่อนไข: Bankruptcy Victory</div>
+            <div id="victoryReasonText" class="text-sm text-cyan-300 mb-5 font-semibold">ชนะด้วยเงื่อนไข: Bankruptcy Victory</div>
 
             <!-- Winner Banner -->
-            <div id="winnerBanner" class="bg-gradient-to-r from-yellow-500/20 via-amber-500/30 to-yellow-500/20 border-2 border-amber-400 rounded-2xl p-4 mb-6 flex items-center justify-center gap-4">
-                <span id="winnerAvatar" class="text-4xl sm:text-5xl">👨‍🚀</span>
+            <div id="winnerBanner" class="bg-gradient-to-r from-yellow-500/20 via-amber-500/30 to-yellow-500/20 border-2 border-amber-400 rounded-2xl p-4 mb-5 flex items-center justify-center gap-4">
+                <span id="winnerAvatar" class="text-4xl sm:text-5xl">👨‍✈️</span>
                 <div class="text-left">
                     <div class="text-xs text-amber-300 uppercase tracking-widest font-bold">ผู้ชนะเลิศอันดับ 1</div>
-                    <div id="winnerName" class="text-xl sm:text-2xl font-black text-white">แคปเทนแอสโทร</div>
+                    <div id="winnerName" class="text-xl sm:text-2xl font-black text-white">ผู้การโอไรออน</div>
                     <div id="winnerNetWorth" class="text-xs text-yellow-300 font-semibold mt-0.5">มูลค่าทรัพย์สินรวม: 25,400 🪙</div>
                 </div>
             </div>
 
             <!-- Scoreboard Table -->
-            <div class="bg-slate-900/90 rounded-2xl p-3 border border-slate-700 mb-6 overflow-x-auto">
+            <div class="bg-slate-900/90 rounded-2xl p-3 border border-slate-700 mb-5 overflow-x-auto">
                 <table class="w-full text-left text-xs sm:text-sm">
                     <thead>
                         <tr class="border-b border-slate-700 text-slate-400">
                             <th class="p-2">อันดับ</th>
                             <th class="p-2">ผู้เล่น</th>
                             <th class="p-2">เงินสด</th>
-                            <th class="p-2">ดาวที่ครอบครอง</th>
+                            <th class="p-2">ดาวที่ครอง</th>
                             <th class="p-2">ความแม่นยำสมการ</th>
                         </tr>
                     </thead>
@@ -585,36 +596,37 @@
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
                     osc.start(now);
                     osc.stop(now + 0.3);
+                } else if (type === 'victory') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.setValueAtTime(554.37, now + 0.15);
+                    osc.frequency.setValueAtTime(659.25, now + 0.3);
+                    osc.frequency.setValueAtTime(880, now + 0.45);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+                    osc.start(now);
+                    osc.stop(now + 0.8);
                 }
             } catch (e) {
                 console.log('Audio error:', e);
             }
         }
 
-        // CHARACTER PRESETS WITH UNIQUE SPACE PASSIVES
+        // 10 UNIQUE SPACE CHARACTERS WITH PASSIVE ABILITIES
         const CHARACTER_PRESETS = [
-            { id: 'astro', name: 'แคปเทนแอสโทร', avatar: '👨‍🚀', skill: 'Dice Master (+20% เงินเดือน)', salaryBonus: 0.2 },
-            { id: 'zoe', name: 'มนุษย์ต่างดาวโซอี้', avatar: '👽', skill: 'Alien Shield (-15% ค่าผ่านทาง)', tollDiscount: 0.15 },
-            { id: 'robox', name: 'หุ่นยนต์โรโบ-เอ็กซ์', avatar: '🤖', skill: 'Math Engine (+200 🪙 โบนัสตอบถูก)', mathBonus: 200 },
-            { id: 'bunny', name: 'กระต่ายอวกาศ', avatar: '🐰', skill: 'Lucky Jump (หลบหลุมดำสำเร็จง่ายขึ้น)', luckyJail: true },
-            { id: 'nebula', name: 'เจ้าหญิงเนบิวลา', avatar: '👸', skill: 'Star Builder (-20% ค่าอัปเกรด)', upgradeDiscount: 0.2 },
-            { id: 'orion', name: 'นักบินโอเรียน', avatar: '🛸', skill: 'Double Booster (+300 🪙 เมื่อทอยเบิ้ล)', doubleBonus: 300 }
+            { id: 'orion', name: 'ผู้การโอไรออน', avatar: '👨‍✈️', skill: 'ส่วนลดซื้อดาว 10%', buyDiscount: 0.10 },
+            { id: 'zog', name: 'เอเลี่ยนซ็อก', avatar: '👽', skill: 'โบนัสเงินทอยเบิ้ล +500', doubleBonus: 500 },
+            { id: 'maya', name: 'นักบินอวกาศมายา', avatar: '👩‍🚀', skill: 'โบนัสเงินเดือน Start +20%', salaryBonus: 0.20 },
+            { id: 'rx7', name: 'หุ่นยนต์ RX-7', avatar: '🤖', skill: 'ลดค่าผ่านทางจ่ายคนอื่น 15%', tollPayDiscount: 0.15 },
+            { id: 'nebula', name: 'เจ้าหญิงแห่งเนบิวลา', avatar: '👸', skill: 'โบนัสค่าผ่านทางดาวตัวเอง +20%', tollReceiveBonus: 0.20 },
+            { id: 'cat', name: 'เหมียวอวกาศแอสโทร', avatar: '🐱', skill: 'เพิ่มโอกาสได้การ์ดโชคดี', luckyChance: true },
+            { id: 'miner', name: 'นักขุดแร่คอสมิก', avatar: '⛏️', skill: 'ตอบสมการถูกได้โบนัส +300', mathBonus: 300 },
+            { id: 'wizard', name: 'จอมเวทควอนตัม', avatar: '🧙‍♂️', skill: 'เงินตั้งต้นเพิ่ม +1,000', startCashBonus: 1000 },
+            { id: 'fox', name: 'จิ้งจอกกาแลกซี', avatar: '🦊', skill: 'ส่วนลดการอัปเกรด 20%', upgradeDiscount: 0.20 },
+            { id: 'bear', name: 'หมีอวกาศบับเบิล', avatar: '🐻', skill: 'ลดค่าปรับหลุมดำ 50%', jailFeeDiscount: 0.50 }
         ];
 
-        const DICE_THEMES = [
-            { id: 'classic', name: 'ลูกเต๋าคลาสสิก 🎲', class: 'dice' },
-            { id: 'cyan', name: 'ลูกเต๋านีออนฟ้า 💎', class: 'dice dice-cyan' },
-            { id: 'gold', name: 'ลูกเต๋าทองคำ 🌟', class: 'dice dice-gold' }
-        ];
-
-        const PENDANT_TYPES = [
-            { id: 'salary', name: 'จี้ดวงดาวโชคดี (+10% เงินเดือน)' },
-            { id: 'discount', name: 'จี้ส่วนลดเมือง (-10% ราคาซื้อ)' },
-            { id: 'shield', name: 'จี้โล่ป้องกัน (-15% ค่าผ่านทาง)' },
-            { id: 'math', name: 'จี้สมองกลคณิต (+200 🪙 ตอบถูก)' }
-        ];
-
-        // 20 BOARD TILES CONFIGURATION (6x6 Grid Loop)
+        // 20 BOARD TILES CONFIGURATION (6x6 Perimeter Loop)
         const BOARD_TILES = [
             { id: 0, name: 'จุดเริ่มต้น', type: 'start', icon: '🚀', colorGroup: 'special', gridPos: { col: 1, row: 1 } },
             { id: 1, name: 'ดาวพุธ', type: 'property', group: 'red', cost: 1000, baseToll: 200, icon: '🪐', colorGroup: '#ef4444', gridPos: { col: 2, row: 1 } },
@@ -624,20 +636,20 @@
             { id: 5, name: 'หลุมดำ', type: 'jail', icon: '🕳️', colorGroup: 'special', gridPos: { col: 6, row: 1 } },
             
             { id: 6, name: 'ดาวพฤหัส', type: 'property', group: 'orange', cost: 2000, baseToll: 400, icon: '🟠', colorGroup: '#f97316', gridPos: { col: 6, row: 2 } },
-            { id: 7, name: 'สายการบินกาแล็กซี', type: 'tourist', cost: 2500, baseToll: 750, icon: '🛸', colorGroup: '#06b6d4', gridPos: { col: 6, row: 3 } },
+            { id: 7, name: 'สถานีขนส่งกาแลกซี', type: 'tourist', cost: 2500, baseToll: 750, icon: '🛸', colorGroup: '#06b6d4', gridPos: { col: 6, row: 3 } },
             { id: 8, name: 'ดาวเสาร์', type: 'property', group: 'yellow', cost: 2400, baseToll: 480, icon: '🪐', colorGroup: '#eab308', gridPos: { col: 6, row: 4 } },
             { id: 9, name: 'ดวงอวกาศ 2', type: 'chance', icon: '🎁', colorGroup: 'special', gridPos: { col: 6, row: 5 } },
             
             { id: 10, name: 'วาร์ปสเตชั่น', type: 'warp', icon: '🌀', colorGroup: 'special', gridPos: { col: 6, row: 6 } },
             { id: 11, name: 'ดาวยูเรนัส', type: 'property', group: 'yellow', cost: 2800, baseToll: 560, icon: '🌐', colorGroup: '#eab308', gridPos: { col: 5, row: 6 } },
             { id: 12, name: 'ดาวเนปจูน', type: 'property', group: 'green', cost: 3200, baseToll: 640, icon: '🔵', colorGroup: '#22c55e', gridPos: { col: 4, row: 6 } },
-            { id: 13, name: 'สถานีอวกาศนานาชาติ', type: 'tourist', cost: 2500, baseToll: 750, icon: '📡', colorGroup: '#06b6d4', gridPos: { col: 3, row: 6 } },
+            { id: 13, name: 'สถานีอวกาศวงโครต', type: 'tourist', cost: 2500, baseToll: 750, icon: '📡', colorGroup: '#06b6d4', gridPos: { col: 3, row: 6 } },
             { id: 14, name: 'ภาษีอวกาศ', type: 'tax', icon: '💳', colorGroup: 'special', gridPos: { col: 2, row: 6 } },
             { id: 15, name: 'ศูนย์บัญชาการ', type: 'start_bonus', icon: '🏛️', colorGroup: 'special', gridPos: { col: 1, row: 6 } },
             
             { id: 16, name: 'ทางช้างเผือก', type: 'property', group: 'green', cost: 3600, baseToll: 720, icon: '🌌', colorGroup: '#22c55e', gridPos: { col: 1, row: 5 } },
             { id: 17, name: 'ดวงอวกาศ 3', type: 'chance', icon: '🎁', colorGroup: 'special', gridPos: { col: 1, row: 4 } },
-            { id: 18, name: 'ศูนย์ขนส่งดวงดาว', type: 'tourist', cost: 2500, baseToll: 750, icon: '🛗', colorGroup: '#06b6d4', gridPos: { col: 1, row: 3 } },
+            { id: 18, name: 'สถานีขนส่งคอสมิก', type: 'tourist', cost: 2500, baseToll: 750, icon: '🛗', colorGroup: '#06b6d4', gridPos: { col: 1, row: 3 } },
             { id: 19, name: 'แอนโดรเมดา', type: 'property', group: 'purple', cost: 4500, baseToll: 900, icon: '✨', colorGroup: '#a855f7', gridPos: { col: 1, row: 2 } }
         ];
 
@@ -651,7 +663,8 @@
             boardOwnership: {}, // tileId -> { ownerId, level: 1..4 }
             isRolling: false,
             autoBotSpeed: 'normal',
-            pendingEquationCallback: null
+            pendingEquationCallback: null,
+            pendingChanceEv: null
         };
 
         // 100% ACCURATE MATH EQUATION GENERATOR
@@ -665,7 +678,7 @@
             let steps = [];
 
             if (grade === 'p4') {
-                // Grade 4: 1-step equations (Positive integer results)
+                // Grade 4: 1-step equations
                 const type = getRandomInt(1, 4);
                 if (type === 1) { // x + a = b
                     const a = getRandomInt(5, 25);
@@ -720,8 +733,8 @@
                     const c = a * correctAnswer + b;
                     eqText = `${a}x + ${b} = ${c}`;
                     steps = [
-                        `ขั้นตอนที่ 1: ย้าย +${b} ไปฝั่งขวาเป็น -${b} $\\rightarrow$ ${a}x = ${c} - ${b} = ${c - b}`,
-                        `ขั้นตอนที่ 2: ย้าย ${a} ไปหารฝั่งขวา $\\rightarrow$ x = ${c - b} ÷ ${a}`,
+                        `ขั้นตอนที่ 1: ย้าย +${b} ไปฝั่งขวาเป็น -${b} ➔ ${a}x = ${c} - ${b} = ${c - b}`,
+                        `ขั้นตอนที่ 2: ย้าย ${a} ไปหารฝั่งขวา ➔ x = ${c - b} ÷ ${a}`,
                         `สรุปคำตอบ: x = ${correctAnswer}`
                     ];
                 } else if (type === 2) { // ax - b = c
@@ -731,8 +744,8 @@
                     const c = a * correctAnswer - b;
                     eqText = `${a}x - ${b} = ${c}`;
                     steps = [
-                        `ขั้นตอนที่ 1: ย้าย -${b} ไปฝั่งขวาเป็น +${b} $\\rightarrow$ ${a}x = ${c} + ${b} = ${c + b}`,
-                        `ขั้นตอนที่ 2: ย้าย ${a} ไปหารฝั่งขวา $\\rightarrow$ x = ${c + b} ÷ ${a}`,
+                        `ขั้นตอนที่ 1: ย้าย -${b} ไปฝั่งขวาเป็น +${b} ➔ ${a}x = ${c} + ${b} = ${c + b}`,
+                        `ขั้นตอนที่ 2: ย้าย ${a} ไปหารฝั่งขวา ➔ x = ${c + b} ÷ ${a}`,
                         `สรุปคำตอบ: x = ${correctAnswer}`
                     ];
                 } else { // (x + b) / a = c
@@ -742,8 +755,8 @@
                     correctAnswer = (a * c) - b;
                     eqText = `(x + ${b}) ÷ ${a} = ${c}`;
                     steps = [
-                        `ขั้นตอนที่ 1: ย้าย ÷ ${a} ไปคูณฝั่งขวา $\\rightarrow$ x + ${b} = ${c} × ${a} = ${c * a}`,
-                        `ขั้นตอนที่ 2: ย้าย +${b} ไปลบออกฝั่งขวา $\\rightarrow$ x = ${c * a} - ${b}`,
+                        `ขั้นตอนที่ 1: ย้าย ÷ ${a} ไปคูณฝั่งขวา ➔ x + ${b} = ${c} × ${a} = ${c * a}`,
+                        `ขั้นตอนที่ 2: ย้าย +${b} ไปลบออกฝั่งขวา ➔ x = ${c * a} - ${b}`,
                         `สรุปคำตอบ: x = ${correctAnswer}`
                     ];
                 }
@@ -757,8 +770,8 @@
                     const c = a * (correctAnswer - b);
                     eqText = `${a}(x - ${b}) = ${c}`;
                     steps = [
-                        `ขั้นตอนที่ 1: ย้าย ${a} ที่คูณอยู่หน้าวงเล็บไปหารฝั่งขวา $\\rightarrow$ x - ${b} = ${c} ÷ ${a} = ${c / a}`,
-                        `ขั้นตอนที่ 2: ย้าย -${b} ไปบวกฝั่งขวา $\\rightarrow$ x = ${c / a} + ${b}`,
+                        `ขั้นตอนที่ 1: ย้าย ${a} ที่คูณอยู่หน้าวงเล็บไปหารฝั่งขวา ➔ x - ${b} = ${c} ÷ ${a} = ${c / a}`,
+                        `ขั้นตอนที่ 2: ย้าย -${b} ไปบวกฝั่งขวา ➔ x = ${c / a} + ${b}`,
                         `สรุปคำตอบ: x = ${correctAnswer}`
                     ];
                 } else { // ax + b = cx + d
@@ -770,9 +783,9 @@
                     const dVal = (aVal * correctAnswer + bVal) - (cVal * correctAnswer);
                     eqText = `${aVal}x + ${bVal} = ${cVal}x + ${dVal}`;
                     steps = [
-                        `ขั้นตอนที่ 1: ย้ายตัวแปร ${cVal}x มาลบฝั่งซ้าย $\\rightarrow$ (${aVal}x - ${cVal}x) + ${bVal} = ${dVal}`,
-                        `ขั้นตอนที่ 2: จะได้ ${diff}x + ${bVal} = ${dVal} $\\rightarrow$ ${diff}x = ${dVal} - ${bVal} = ${dVal - bVal}`,
-                        `ขั้นตอนที่ 3: ย้าย ${diff} ไปหารฝั่งขวา $\\rightarrow$ x = ${dVal - bVal} ÷ ${diff}`,
+                        `ขั้นตอนที่ 1: ย้ายตัวแปร ${cVal}x มาลบฝั่งซ้าย ➔ (${aVal}x - ${cVal}x) + ${bVal} = ${dVal}`,
+                        `ขั้นตอนที่ 2: จะได้ ${diff}x + ${bVal} = ${dVal} ➔ ${diff}x = ${dVal} - ${bVal} = ${dVal - bVal}`,
+                        `ขั้นตอนที่ 3: ย้าย ${diff} ไปหารฝั่งขวา ➔ x = ${dVal - bVal} ÷ ${diff}`,
                         `สรุปคำตอบ: x = ${correctAnswer}`
                     ];
                 }
@@ -831,59 +844,71 @@
 
                 const card = document.createElement('div');
                 card.className = "bg-slate-800/90 p-2.5 rounded-xl border border-slate-700 flex flex-col gap-2 text-xs";
+                
+                let charOptionsHtml = CHARACTER_PRESETS.map((c, idx) => `
+                    <option value="${c.id}" ${idx === charIndex ? 'selected' : ''}>${c.avatar} ${c.name}</option>
+                `).join('');
+
                 card.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xl">${char.avatar}</span>
-                            <div>
-                                <div class="font-bold text-slate-200">${char.name}</div>
-                                <div class="text-[10px] text-cyan-400">${char.skill}</div>
-                            </div>
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2 flex-1">
+                            <input type="text" id="playerNameInput_${i}" value="${isHumanDefault ? 'ผู้เล่น 1' : 'บอท ' + (i)}" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-2 py-1 text-xs font-bold text-cyan-300 focus:outline-none focus:border-cyan-400">
                         </div>
-                        <select id="playerTypeSelect_${i}" class="bg-slate-900 border border-slate-600 rounded-lg text-xs p-1 text-slate-200">
+                        <select id="playerTypeSelect_${i}" class="bg-slate-900 border border-slate-600 rounded-lg text-xs p-1 text-slate-200 focus:outline-none">
                             <option value="human" ${isHumanDefault ? 'selected' : ''}>👤 คน</option>
                             <option value="bot" ${!isHumanDefault ? 'selected' : ''}>🤖 บอท AI</option>
                         </select>
                     </div>
-                    <div class="grid grid-cols-2 gap-1.5 pt-1 border-t border-slate-700/60">
-                        <select id="diceSelect_${i}" class="bg-slate-900 border border-slate-700 rounded p-1 text-[10px]">
-                            ${DICE_THEMES.map(d => `<option value="${d.id}">${d.name}</option>`).join('')}
+                    <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-700/60">
+                        <select id="charSelect_${i}" onchange="updateCharAbilityBadge(${i})" class="bg-slate-900 border border-slate-600 rounded-lg p-1 text-xs text-slate-200 flex-1 focus:outline-none">
+                            ${charOptionsHtml}
                         </select>
-                        <select id="pendantSelect_${i}" class="bg-slate-900 border border-slate-700 rounded p-1 text-[10px]">
-                            ${PENDANT_TYPES.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
-                        </select>
+                        <span id="charSkillBadge_${i}" class="text-[10px] text-neonYellow bg-slate-950 px-2 py-1 rounded-md border border-slate-700 font-semibold truncate max-w-[150px]">
+                            ${char.skill}
+                        </span>
                     </div>
                 `;
                 container.appendChild(card);
             }
         }
 
+        function updateCharAbilityBadge(index) {
+            const charId = document.getElementById(`charSelect_${index}`).value;
+            const charObj = CHARACTER_PRESETS.find(c => c.id === charId);
+            if (charObj) {
+                document.getElementById(`charSkillBadge_${index}`).innerText = charObj.skill;
+            }
+        }
+
         function startGameEngine() {
             initAudio();
             gameState.grade = selectedGradeLevel;
+            gameState.maxRounds = parseInt(document.getElementById('maxRoundsSelect').value);
 
             const gradeMap = { 'p4': 'ป.4 (สมการ 1 ขั้น)', 'p5': 'ป.5 (สมการ 2 ขั้น)', 'p6': 'ป.6 (สมการวงเล็บ/สองข้าง)' };
             document.getElementById('gradeDisplayBadge').innerText = `ระดับชั้น: ${gradeMap[gameState.grade]}`;
+            document.getElementById('maxRoundText').innerText = gameState.maxRounds;
 
             gameState.players = [];
             for (let i = 0; i < setupPlayerCount; i++) {
-                const char = CHARACTER_PRESETS[i % CHARACTER_PRESETS.length];
+                const charId = document.getElementById(`charSelect_${i}`)?.value || CHARACTER_PRESETS[i % CHARACTER_PRESETS.length].id;
+                const charObj = CHARACTER_PRESETS.find(c => c.id === charId) || CHARACTER_PRESETS[i % CHARACTER_PRESETS.length];
+                
+                const customName = document.getElementById(`playerNameInput_${i}`)?.value.trim() || charObj.name;
                 const typeSelect = document.getElementById(`playerTypeSelect_${i}`);
                 const isBot = typeSelect ? (typeSelect.value === 'bot') : (i !== 0);
 
-                const diceSel = document.getElementById(`diceSelect_${i}`)?.value || 'classic';
-                const pendantSel = document.getElementById(`pendantSelect_${i}`)?.value || 'salary';
+                let startingCash = 10000;
+                if (charObj.startCashBonus) startingCash += charObj.startCashBonus;
 
                 gameState.players.push({
                     id: i,
-                    name: char.name,
-                    avatar: char.avatar,
-                    skill: char.skill,
-                    preset: char,
-                    diceTheme: diceSel,
-                    pendant: pendantSel,
+                    name: customName,
+                    avatar: charObj.avatar,
+                    skill: charObj.skill,
+                    preset: charObj,
                     isBot: isBot,
-                    cash: 10000,
+                    cash: startingCash,
                     position: 0,
                     jailTurns: 0,
                     escapeCards: 0,
@@ -993,15 +1018,8 @@
             const curPlayer = gameState.players[gameState.currentPlayerIndex];
             document.getElementById('turnAvatar').innerText = curPlayer.avatar;
             document.getElementById('turnPlayerName').innerText = curPlayer.name + (curPlayer.isBot ? ' (บอท)' : '');
-            document.getElementById('turnSkillBadge').innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> สกิล: ${curPlayer.skill}`;
+            document.getElementById('turnSkillText').innerText = curPlayer.skill;
             document.getElementById('currentRoundText').innerText = gameState.roundCount;
-
-            // Apply player selected dice style
-            const d1 = document.getElementById('dice1');
-            const d2 = document.getElementById('dice2');
-            const diceThemeObj = DICE_THEMES.find(d => d.id === curPlayer.diceTheme) || DICE_THEMES[0];
-            d1.className = diceThemeObj.class;
-            d2.className = diceThemeObj.class;
 
             const rollBtn = document.getElementById('rollDiceBtn');
             if (curPlayer.isBot) {
@@ -1040,16 +1058,19 @@
             // Black Hole Check
             if (curPlayer.jailTurns > 0) {
                 gameState.isRolling = false;
+                let fee = 1000;
+                if (curPlayer.preset.jailFeeDiscount) fee = Math.round(fee * (1 - curPlayer.preset.jailFeeDiscount));
+
                 if (curPlayer.isBot) {
-                    // Bot choices
                     if (curPlayer.escapeCards > 0) {
                         handleBlackHoleChoice('card');
-                    } else if (curPlayer.cash >= 2000) {
+                    } else if (curPlayer.cash >= fee * 2) {
                         handleBlackHoleChoice('pay');
                     } else {
                         handleBlackHoleChoice('double');
                     }
                 } else {
+                    document.getElementById('blackHoleFeeText').innerText = fee.toLocaleString();
                     document.getElementById('blackHoleStatusText').innerText = `ติดอยู่ในหลุมดำอวกาศอีก ${curPlayer.jailTurns} ตา เลือกวิธีออกจากหลุมดำ:`;
                     document.getElementById('escapeCardCountBadge').innerText = `มี ${curPlayer.escapeCards} ใบ`;
                     document.getElementById('blackHoleModal').classList.remove('hidden');
@@ -1078,7 +1099,7 @@
                 if (isDouble && curPlayer.preset.doubleBonus) {
                     curPlayer.cash += curPlayer.preset.doubleBonus;
                     playSound('cash');
-                    addLog(`🌟 <strong>${curPlayer.name}</strong> ทอยได้เบิ้ล! ได้รับโบนัส +${curPlayer.preset.doubleBonus} 🪙`);
+                    addLog(`🌟 <strong>${curPlayer.name}</strong> ทอยได้เบิ้ล! ได้รับโบนัสเอเลี่ยนซ็อก +${curPlayer.preset.doubleBonus} 🪙`);
                 }
 
                 addLog(`🎲 <strong>${curPlayer.name}</strong> ทอยลูกเต๋าได้ ${d1} และ ${d2} (รวม ${totalMove} ช่อง)`);
@@ -1091,16 +1112,19 @@
             document.getElementById('blackHoleModal').classList.add('hidden');
             const curPlayer = gameState.players[gameState.currentPlayerIndex];
 
+            let fee = 1000;
+            if (curPlayer.preset.jailFeeDiscount) fee = Math.round(fee * (1 - curPlayer.preset.jailFeeDiscount));
+
             if (choiceType === 'card' && curPlayer.escapeCards > 0) {
                 curPlayer.escapeCards--;
                 curPlayer.jailTurns = 0;
                 addLog(`🎟️ <strong>${curPlayer.name}</strong> ใช้การ์ดหนีหลุมดำ! หลุดพ้นทันที`);
                 executeDiceRoll();
-            } else if (choiceType === 'pay' && curPlayer.cash >= 1000) {
-                curPlayer.cash -= 1000;
+            } else if (choiceType === 'pay' && curPlayer.cash >= fee) {
+                curPlayer.cash -= fee;
                 curPlayer.jailTurns = 0;
                 playSound('cash');
-                addLog(`💳 <strong>${curPlayer.name}</strong> จ่ายค่าปรับ 1,000 🪙 หลุดพ้นจากหลุมดำ!`);
+                addLog(`💳 <strong>${curPlayer.name}</strong> จ่ายค่าปรับ ${fee.toLocaleString()} 🪙 หลุดพ้นจากหลุมดำ!`);
                 executeDiceRoll();
             } else { // double
                 const d1 = getRandomInt(1, 6);
@@ -1129,7 +1153,6 @@
                 if (player.position === 0) {
                     let salary = 2000;
                     if (player.preset.salaryBonus) salary = Math.round(salary * (1 + player.preset.salaryBonus));
-                    if (player.pendant === 'salary') salary = Math.round(salary * 1.1);
                     player.cash += salary;
                     playSound('cash');
                     addLog(`💵 <strong>${player.name}</strong> เดินผ่านจุดเริ่มต้น ได้รับเงินเดือน +${salary.toLocaleString()} 🪙`);
@@ -1143,7 +1166,7 @@
                     gameState.isRolling = false;
                     handleTileLanding(player, player.position, isDouble);
                 }
-            }, 200);
+            }, 180);
         }
 
         // TILE LANDING EVENT ROUTER
@@ -1153,9 +1176,10 @@
 
             if (tile.type === 'start') {
                 let salary = 2000;
+                if (player.preset.salaryBonus) salary = Math.round(salary * (1 + player.preset.salaryBonus));
                 player.cash += salary;
                 playSound('cash');
-                addLog(`🏛️ <strong>${player.name}</strong> ตกลงบนช่องจุดเริ่มต้น พอดี! รับโบนัสพิเศษ +${salary.toLocaleString()} 🪙`);
+                addLog(`🏛️ <strong>${player.name}</strong> ตกลงบนช่องจุดเริ่มต้นพอดี! รับเงินเดือนพิเศษ +${salary.toLocaleString()} 🪙`);
                 finalizeTurn(isDouble);
             } else if (tile.type === 'start_bonus') {
                 player.cash += 1500;
@@ -1163,17 +1187,12 @@
                 addLog(`🏛️ <strong>${player.name}</strong> ตกช่องศูนย์บัญชาการ ได้รับเงินสนับสนุน +1,500 🪙`);
                 finalizeTurn(isDouble);
             } else if (tile.type === 'jail') {
-                if (player.preset.luckyJail && Math.random() < 0.5) {
-                    addLog(`🐰 สกิลกระต่ายอวกาศทำงาน! <strong>${player.name}</strong> หลบหลุมดำสำเร็จ!`);
-                } else {
-                    player.jailTurns = 3;
-                    addLog(`🕳️ <strong>${player.name}</strong> ถูกดูดเข้าสู่หลุมดำ! ติดอยู่ 3 ตา`);
-                }
+                player.jailTurns = 3;
+                addLog(`🕳️ <strong>${player.name}</strong> ถูกดูดเข้าสู่หลุมดำ! ติดอยู่ 3 ตา`);
                 endTurnRotation();
             } else if (tile.type === 'warp') {
                 playSound('warp');
                 if (player.isBot) {
-                    // Bot warp target selection
                     const unowned = BOARD_TILES.filter(t => (t.type === 'property' || t.type === 'tourist') && !gameState.boardOwnership[t.id]);
                     const target = unowned.length > 0 ? unowned[0].id : getRandomInt(0, 19);
                     addLog(`🌀 <strong>${player.name} (บอท)</strong> เลือกวาร์ปไปช่อง [${BOARD_TILES[target].name}]`);
@@ -1188,7 +1207,7 @@
                     openWarpModal(player);
                 }
             } else if (tile.type === 'tax') {
-                const taxAmount = Math.max(1500, Math.round(player.cash * 0.10));
+                const taxAmount = Math.max(1200, Math.round(player.cash * 0.10));
                 player.cash -= taxAmount;
                 addLog(`💳 <strong>${player.name}</strong> จ่ายภาษีอวกาศ -${taxAmount.toLocaleString()} 🪙`);
                 checkBankruptcyOrVictory();
@@ -1201,8 +1220,8 @@
         }
 
         function handleChanceCard(player, isDouble) {
-            const chanceEvents = [
-                { text: "ได้รับทุนสนับสนุนจากสถาบันอวกาศ! +1,500 🪙", cash: 1500 },
+            let chanceEvents = [
+                { text: "ได้รับทุนสนับสนุนจากสถาบันวิจัยอวกาศ! +1,500 🪙", cash: 1500 },
                 { text: "พายุสุริยะพัดยานเสียหาย! จ่ายค่าซ่อม -1,000 🪙", cash: -1000 },
                 { text: "ได้รับการ์ดหนีหลุมดำ 1 ใบ! 🎟️", escapeCard: true },
                 { text: "ลมสุริยะช่วยส่งเสริม! เดินหน้าเพิ่ม 3 ช่อง 🚀", moveStep: 3 },
@@ -1210,10 +1229,19 @@
                 { text: "ไอพ่นวาร์ปทำงานผิดพลาด! ถูกส่งไปหลุมดำ 🕳️", sendJail: true }
             ];
 
+            if (player.preset.luckyChance) {
+                chanceEvents = [
+                    { text: "เหมียวอวกาศนำโชค! ได้รับขุมทรัพย์ดาวตก +2,000 🪙", cash: 2000 },
+                    { text: "ได้รับการ์ดหนีหลุมดำ 1 ใบ! 🎟️", escapeCard: true },
+                    { text: "ค้นพบดาวเคราะห์ขุดแร่ใหม่! +1,500 🪙", cash: 1500 },
+                    { text: "ไอพ่นไฮเปอร์ไดรฟ์! เดินหน้าเพิ่ม 3 ช่อง 🚀", moveStep: 3 }
+                ];
+            }
+
             const ev = chanceEvents[getRandomInt(0, chanceEvents.length - 1)];
 
             if (player.isBot) {
-                addLog(`🎁 <strong>การ์ดดวงอวกาศ (บอท):</strong> ${ev.text}`);
+                addLog(`🎁 <strong>การ์ดดวงอวกาศ (${player.name}):</strong> ${ev.text}`);
                 applyChanceEffect(player, ev, isDouble);
             } else {
                 document.getElementById('chanceCardText').innerText = ev.text;
@@ -1265,7 +1293,7 @@
             if (!ownership) {
                 // Buy Unowned Property
                 let cost = tile.cost;
-                if (player.pendant === 'discount') cost = Math.round(cost * 0.9);
+                if (player.preset.buyDiscount) cost = Math.round(cost * (1 - player.preset.buyDiscount));
 
                 promptEquationChallenge(player, `ซื้อ [${tile.name}] ราคา ${cost.toLocaleString()} 🪙`, (success) => {
                     if (success) {
@@ -1274,7 +1302,7 @@
                             gameState.boardOwnership[tile.id] = { ownerId: player.id, level: 1 };
                             updateTileVisuals(tile.id);
                             playSound('cash');
-                            addLog(`🏛️ <strong>${player.name}</strong> แก้สมการถูกต้อง และซื้อ [${tile.name}] ขั้นที่ 1 สำเร็จ!`);
+                            addLog(`🏛️ <strong>${player.name}</strong> แก้สมการถูกต้อง และซื้อ [${tile.name}] ขั้นที่ 1 (โดม) สำเร็จ!`);
                         } else {
                             addLog(`❌ <strong>${player.name}</strong> แก้สมการถูก แต่เงินสดไม่พอซื้อเมือง`);
                         }
@@ -1287,7 +1315,7 @@
                     let upgradeCost = Math.round(tile.cost * 0.8);
                     if (player.preset.upgradeDiscount) upgradeCost = Math.round(upgradeCost * (1 - player.preset.upgradeDiscount));
 
-                    const levelNames = ['', 'ฐานสำรวจ', 'สถานีอวกาศ', 'นครอวกาศ', 'แลนด์มาร์ก'];
+                    const levelNames = ['', 'โดม', 'ฐานการค้า', 'รีสอร์ต', 'แลนด์มาร์ก'];
                     const nextLevelName = levelNames[ownership.level + 1];
 
                     promptEquationChallenge(player, `อัปเกรด [${tile.name}] เป็น ${nextLevelName} (${upgradeCost.toLocaleString()} 🪙)`, (success) => {
@@ -1313,13 +1341,17 @@
                 const owner = gameState.players.find(p => p.id === ownership.ownerId);
                 let toll = tile.baseToll * ownership.level;
 
+                if (owner.preset.tollReceiveBonus) {
+                    toll = Math.round(toll * (1 + owner.preset.tollReceiveBonus));
+                }
+
                 if (tile.type === 'property' && checkColorMonopoly(owner.id, tile.group)) {
                     toll *= 2;
                     addLog(`🔥 <strong>Color Monopoly!</strong> ค่าผ่านทาง [${tile.name}] เพิ่มเป็น 2 เท่า!`);
                 }
 
-                if (player.preset.tollDiscount || player.pendant === 'shield') {
-                    toll = Math.round(toll * 0.85);
+                if (player.preset.tollPayDiscount) {
+                    toll = Math.round(toll * (1 - player.preset.tollPayDiscount));
                 }
 
                 player.cash -= toll;
@@ -1332,7 +1364,7 @@
                 // Takeover Choice (If not Landmark Level 4)
                 if (ownership.level < 4 && !player.isBankrupt && player.cash >= tile.cost * 2) {
                     const takeoverCost = tile.cost * 2;
-                    promptEquationChallenge(player, `ซื้อกิจการต่อ [${tile.name}] จาก ${owner.name} (${takeoverCost.toLocaleString()} 🪙)`, (success) => {
+                    promptEquationChallenge(player, `เทคโอเวอร์ [${tile.name}] จาก ${owner.name} (${takeoverCost.toLocaleString()} 🪙)`, (success) => {
                         if (success) {
                             player.cash -= takeoverCost;
                             owner.cash += Math.round(takeoverCost * 0.8);
@@ -1383,14 +1415,14 @@
                     if (botIsCorrect) {
                         player.mathStats.correct++;
                         let mathBonus = 500;
-                        if (player.preset.mathBonus || player.pendant === 'math') mathBonus += 200;
+                        if (player.preset.mathBonus) mathBonus += player.preset.mathBonus;
                         player.cash += mathBonus;
                         callback(true);
                     } else {
                         addLog(`❌ <strong>${player.name} (บอท)</strong> ตอบสมการผิด!`);
                         callback(false);
                     }
-                }, gameState.autoBotSpeed === 'fast' ? 300 : 1000);
+                }, gameState.autoBotSpeed === 'fast' ? 300 : 900);
                 return;
             }
 
@@ -1423,7 +1455,7 @@
                 player.mathStats.correct++;
                 playSound('correct');
                 let mathBonus = 500;
-                if (player.preset.mathBonus || player.pendant === 'math') mathBonus += 200;
+                if (player.preset.mathBonus) mathBonus += player.preset.mathBonus;
                 player.cash += mathBonus;
                 addLog(`✅ <strong>${player.name}</strong> ตอบสมการถูกต้อง! ได้รับโบนัส +${mathBonus} 🪙`);
 
@@ -1557,7 +1589,7 @@
                 const touristTiles = BOARD_TILES.filter(t => t.type === 'tourist');
                 const pTouristCount = touristTiles.filter(t => gameState.boardOwnership[t.id] && gameState.boardOwnership[t.id].ownerId === p.id).length;
                 if (pTouristCount === 3) {
-                    triggerVictorySummary(`Tourist Victory! (ครอบครองสถานที่ท่องเที่ยวอวกาศครบ 3 แห่ง)`);
+                    triggerVictorySummary(`Tourist Victory! (ครอบครองสถานีขนส่งอวกาศครบทั้ง 3 แห่ง)`);
                     return;
                 }
 
@@ -1589,6 +1621,15 @@
         }
 
         function triggerVictorySummary(reason) {
+            playSound('victory');
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 120,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+            }
+
             document.getElementById('victoryReasonText').innerText = `เงื่อนไขชัยชนะ: ${reason}`;
 
             const ranked = [...gameState.players].map(p => {
@@ -1639,9 +1680,7 @@
         }
 
         function confirmRestartGame() {
-            if (confirm("คุณต้องการเริ่มเกมใหม่ใช่หรือไม่?")) {
-                location.reload();
-            }
+            document.getElementById('setupModal').classList.remove('hidden');
         }
 
         window.onload = function() {
