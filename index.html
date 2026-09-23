@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>เกมกระดานอวกาศ - Space Board Game</title>
   <style>
-    /* --- 1. รีเซ็ตค่าพื้นฐาน และธีมอวกาศ --- */
+    /* --- 1. สไตล์พื้นฐานและธีมอวกาศ --- */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -16,7 +16,7 @@
     body {
       background-color: #0b0e14;
       background-image: 
-        radial-gradient(circle at 50% 50%, rgba(20, 30, 48, 0.5) 0%, rgba(11, 14, 20, 1) 100%),
+        radial-gradient(circle at 50% 50%, rgba(20, 30, 48, 0.6) 0%, rgba(11, 14, 20, 1) 100%),
         radial-gradient(2px 2px at 40px 60px, #fff, rgba(0,0,0,0)),
         radial-gradient(2px 2px at 150px 150px, rgba(255,255,255,0.8), rgba(0,0,0,0)),
         radial-gradient(2px 2px at 300px 80px, rgba(255,255,255,0.6), rgba(0,0,0,0));
@@ -28,21 +28,160 @@
       padding: 20px;
     }
 
-    /* --- 2. เลย์เอาต์หลัก (แยกแผงผู้เล่นอยู่นอกกระดาน) --- */
-    .game-layout {
+    /* --- 2. หน้าแรก (SETUP SCREEN) --- */
+    #setup-screen {
+      background: rgba(22, 27, 34, 0.9);
+      border: 2px solid #30363d;
+      border-radius: 24px;
+      padding: 35px;
+      width: 100%;
+      max-width: 650px;
+      box-shadow: 0 0 40px rgba(0, 242, 254, 0.15);
+      backdrop-filter: blur(10px);
+      text-align: center;
+    }
+
+    .setup-title {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+    }
+
+    .setup-subtitle {
+      color: #8b949e;
+      font-size: 0.95rem;
+      margin-bottom: 25px;
+    }
+
+    .players-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .player-input-card {
+      background: #161b22;
+      border: 2px solid #30363d;
+      border-radius: 16px;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      transition: border-color 0.3s;
+    }
+
+    .player-number-tag {
+      font-weight: bold;
+      font-size: 0.9rem;
+      padding: 4px 10px;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+
+    .name-input {
+      flex-grow: 1;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .name-input:focus {
+      border-color: #00f2fe;
+    }
+
+    .avatar-picker {
+      display: flex;
+      gap: 8px;
+    }
+
+    .avatar-opt {
+      font-size: 1.5rem;
+      width: 42px;
+      height: 42px;
       display: flex;
       align-items: center;
       justify-content: center;
+      border-radius: 10px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .avatar-opt:hover {
+      transform: scale(1.1);
+    }
+
+    .avatar-opt.selected {
+      border-color: #00f2fe;
+      background: rgba(0, 242, 254, 0.2);
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.4);
+    }
+
+    .setup-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .btn {
+      border: none;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-add {
+      background: #21262d;
+      color: #58a6ff;
+      border: 1px solid #30363d;
+    }
+
+    .btn-add:hover {
+      background: #30363d;
+      color: #fff;
+    }
+
+    .btn-start {
+      background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+      color: #000;
+      box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
+      flex-grow: 1;
+    }
+
+    .btn-start:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 25px rgba(0, 242, 254, 0.7);
+    }
+
+    /* --- 3. หน้ากระดานเกม (GAME SCREEN) --- */
+    #game-screen {
+      display: none; /* ซ่อนไว้ก่อน */
+      align-items: center;
+      justify-content: center;
       gap: 25px;
-      max-width: 1200px;
+      max-width: 1250px;
       width: 100%;
     }
 
-    /* --- 3. แผงแสดงเงินผู้เล่น (Sidebar นอกกระดาน) --- */
     .player-sidebar {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 15px;
       width: 200px;
       flex-shrink: 0;
     }
@@ -51,47 +190,38 @@
       background: rgba(22, 27, 34, 0.85);
       border: 2px solid #30363d;
       border-radius: 16px;
-      padding: 20px 15px;
+      padding: 16px 12px;
       text-align: center;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
       backdrop-filter: blur(8px);
-      transition: all 0.3s ease;
     }
 
-    /* สไตล์เมื่อถึงตาผู้เล่นนั้นๆ */
     .player-card.active-turn {
-      border-color: #00f2fe;
       box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
-      transform: translateY(-5px);
+      transform: translateY(-3px);
     }
-
-    /* สีเอกลักษณ์ของผู้เล่นแต่ละคน */
-    .player-card.p1 { border-left: 6px solid #ff4b5c; }
-    .player-card.p2 { border-left: 6px solid #00d2ff; }
 
     .player-avatar {
-      font-size: 2.8rem;
-      margin-bottom: 8px;
-      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+      font-size: 2.5rem;
+      margin-bottom: 6px;
     }
 
     .player-name {
       display: block;
-      font-size: 1rem;
+      font-size: 0.95rem;
       color: #8b949e;
       font-weight: 600;
-      margin-bottom: 5px;
     }
 
     .player-money {
       display: block;
-      font-size: 1.4rem;
+      font-size: 1.3rem;
       font-weight: 800;
       color: #ffcc00;
-      text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+      margin-top: 4px;
     }
 
-    /* --- 4. โครงสร้างกระดานเกม (Center Board) --- */
+    /* กระดานเกมหลัก */
     .board-container {
       background: rgba(15, 20, 28, 0.95);
       border: 2px solid #2d3748;
@@ -104,7 +234,6 @@
       gap: 8px;
     }
 
-    /* พื้นที่ตรงกลางกระดาน */
     .board-center {
       grid-column: 2 / 5;
       grid-row: 2 / 5;
@@ -115,7 +244,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 15px;
+      gap: 12px;
       padding: 15px;
       text-align: center;
     }
@@ -124,7 +253,7 @@
       background: linear-gradient(90deg, #ff4b5c, #ff758c);
       padding: 6px 16px;
       border-radius: 20px;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: bold;
     }
 
@@ -134,39 +263,30 @@
     }
 
     .dice {
-      width: 45px;
-      height: 45px;
+      width: 42px;
+      height: 42px;
       background: #fff;
       color: #000;
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       font-weight: bold;
-      box-shadow: inset 0 0 5px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.4);
     }
 
     .roll-btn {
-      background: #00f2fe;
       background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
       color: #000;
       border: none;
-      padding: 10px 24px;
-      font-size: 1rem;
+      padding: 8px 20px;
+      font-size: 0.95rem;
       font-weight: bold;
       border-radius: 25px;
       cursor: pointer;
-      box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
-      transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    .roll-btn:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 20px rgba(0, 242, 254, 0.7);
-    }
-
-    /* --- 5. ช่องเมืองบนกระดาน (Tile) & ปรับขนาดไอคอน --- */
+    /* ช่องกระดาน */
     .tile {
       background: #161b22;
       border: 2px solid #30363d;
@@ -177,19 +297,13 @@
       align-items: center;
       justify-content: space-between;
       position: relative;
-      overflow: hidden;
-      transition: border-color 0.3s;
     }
 
-    /* แสดงความเป็นเจ้าของด้วยสีขอบ */
-    .tile.owner-p1 { border-color: #ff4b5c; box-shadow: inset 0 0 10px rgba(255, 75, 92, 0.2); }
-    .tile.owner-p2 { border-color: #00d2ff; box-shadow: inset 0 0 10px rgba(0, 210, 255, 0.2); }
+    .tile.owner-p1 { border-color: #ff4b5c; }
+    .tile.owner-p2 { border-color: #00d2ff; }
 
-    /* ปรับขนาดไอคอนเมืองให้ใหญ่ขึ้น */
     .tile-icon {
-      font-size: 2.2rem; /* ขนาดใหญ่ ชัดเจน */
-      margin-top: 2px;
-      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));
+      font-size: 2rem;
     }
 
     .tile-name {
@@ -197,7 +311,6 @@
       font-weight: bold;
       color: #e6edf3;
       text-align: center;
-      line-height: 1.1;
     }
 
     .tile-price {
@@ -206,107 +319,66 @@
       font-weight: bold;
     }
 
-    /* --- 6. ระบบดาว 3D แสดงระดับเมือง (1-4 ดวง) --- */
+    /* ดาว 3D */
     .star-container {
       display: flex;
-      justify-content: center;
       gap: 1px;
-      min-height: 18px;
+      min-height: 16px;
     }
 
     .star-3d {
-      font-size: 0.85rem;
-      display: inline-block;
-      /* ทำสี Gradient ให้ดาวดูมีมิติ */
+      font-size: 0.8rem;
       background: linear-gradient(180deg, #ffe600 0%, #ff8800 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      /* เพิ่มเงาตกกระทบสร้างเอฟเฟกต์ 3D */
-      filter: drop-shadow(0px 2px 0px #804400) drop-shadow(0px 2px 3px rgba(0,0,0,0.8));
-    }
-
-    /* เอฟเฟกต์พิเศษสำหรับดาวเมืองระดับ 4 (เมืองแลนด์มาร์ก) */
-    .level-4 .star-3d {
-      filter: drop-shadow(0 0 6px #ff0055) drop-shadow(0px 2px 0px #800022);
-      animation: pulseGlow 1.5s infinite alternate;
-    }
-
-    @keyframes pulseGlow {
-      from { transform: scale(1); }
-      to { transform: scale(1.15); }
+      filter: drop-shadow(0px 2px 0px #804400);
     }
   </style>
 </head>
 <body>
 
-  <div class="game-layout">
-    
-    <!-- แผงแสดงเงินผู้เล่น 1 (นอกกระดาน - ฝั่งซ้าย) -->
-    <div class="player-sidebar">
-      <div class="player-card p1 active-turn">
-        <div class="player-avatar">🚀</div>
-        <span class="player-name">นักบิน 1</span>
-        <span class="player-money">548,000 $</span>
-      </div>
+  <!-- ================= หน้าที่ 1: ตั้งค่าและเพิ่มผู้เล่น ================= -->
+  <div id="setup-screen">
+    <h1 class="setup-title">🚀 SPACE MONOPOLY</h1>
+    <p class="setup-subtitle">กำหนดผู้เล่นและเลือกไอคอนประจำตัว (2 - 4 คน)</p>
+
+    <div class="players-inputs" id="players-container">
+      <!-- ผู้เล่นจะถูกสร้างขึ้นด้วย JavaScript ที่นี่ -->
     </div>
 
-    <!-- กระดานเกมหลัก -->
+    <div class="setup-actions">
+      <button class="btn btn-add" id="add-player-btn" onclick="addPlayer()">+ เพิ่มผู้เล่น</button>
+      <button class="btn btn-start" onclick="startGame()">เริ่มเกม 🎲</button>
+    </div>
+  </div>
+
+  <!-- ================= หน้าที่ 2: กระดานเกม ================= -->
+  <div id="game-screen">
+    <!-- แผงผู้เล่นฝั่งซ้าย (P1, P3) -->
+    <div class="player-sidebar" id="sidebar-left"></div>
+
+    <!-- กระดานเกม -->
     <div class="board-container">
-      
-      <!-- แถวบนสุด -->
-      <div class="tile">
-        <span class="tile-name">จุดเริ่มต้น</span>
-        <span class="tile-icon">🚩</span>
-        <span class="tile-price">+20K</span>
-      </div>
-
+      <div class="tile"><span class="tile-name">จุดเริ่มต้น</span><span class="tile-icon">🚩</span><span class="tile-price">+20K</span></div>
       <div class="tile owner-p1">
-        <span class="tile-name">ดาวพุธ</span>
-        <span class="tile-icon">🪐</span>
-        <span class="tile-price">50K</span>
-        <div class="star-container level-1">
-          <span class="star-3d">★</span>
-        </div>
+        <span class="tile-name">ดาวพุธ</span><span class="tile-icon">🪐</span><span class="tile-price">50K</span>
+        <div class="star-container"><span class="star-3d">★</span></div>
       </div>
-
       <div class="tile owner-p2">
-        <span class="tile-name">ดาวศุกร์</span>
-        <span class="tile-icon">🌕</span>
-        <span class="tile-price">60K</span>
-        <div class="star-container level-2">
-          <span class="star-3d">★</span><span class="star-3d">★</span>
-        </div>
+        <span class="tile-name">ดาวศุกร์</span><span class="tile-icon">🌕</span><span class="tile-price">60K</span>
+        <div class="star-container"><span class="star-3d">★</span><span class="star-3d">★</span></div>
       </div>
-
-      <div class="tile">
-        <span class="tile-name">โลก</span>
-        <span class="tile-icon">🌎</span>
-        <span class="tile-price">80K</span>
-        <div class="star-container"></div>
-      </div>
-
+      <div class="tile"><span class="tile-name">โลก</span><span class="tile-icon">🌎</span><span class="tile-price">80K</span><div class="star-container"></div></div>
       <div class="tile owner-p1">
-        <span class="tile-name">ดวงจันทร์</span>
-        <span class="tile-icon">🌙</span>
-        <span class="tile-price">90K</span>
-        <div class="star-container level-3">
-          <span class="star-3d">★</span><span class="star-3d">★</span><span class="star-3d">★</span>
-        </div>
+        <span class="tile-name">ดวงจันทร์</span><span class="tile-icon">🌙</span><span class="tile-price">90K</span>
+        <div class="star-container"><span class="star-3d">★</span><span class="star-3d">★</span><span class="star-3d">★</span></div>
       </div>
 
-      <!-- ฝั่งขวา -->
-      <div class="tile owner-p2">
-        <span class="tile-name">ดาวอังคาร</span>
-        <span class="tile-icon">🔴</span>
-        <span class="tile-price">100K</span>
-        <div class="star-container level-4">
-          <span class="star-3d">★</span><span class="star-3d">★</span><span class="star-3d">★</span><span class="star-3d">★</span>
-        </div>
-      </div>
+      <div class="tile"><span class="tile-name">ดาวอังคาร</span><span class="tile-icon">🔴</span><span class="tile-price">100K</span><div class="star-container"></div></div>
 
-      <!-- พื้นที่ตรงกลางกระดาน -->
+      <!-- ศูนย์กลางกระดาน -->
       <div class="board-center">
-        <div class="turn-indicator">ตาของ: 🚀 นักบิน 1</div>
+        <div class="turn-indicator" id="current-turn-display">ตาของ: -</div>
         <div class="dice-area">
           <div class="dice">⚀</div>
           <div class="dice">⚁</div>
@@ -314,77 +386,147 @@
         <button class="roll-btn">ทอยลูกเต๋า</button>
       </div>
 
-      <div class="tile">
-        <span class="tile-name">ดาวพฤหัส</span>
-        <span class="tile-icon">🪐</span>
-        <span class="tile-price">130K</span>
-        <div class="star-container"></div>
-      </div>
+      <div class="tile"><span class="tile-name">ดาวพฤหัส</span><span class="tile-icon">🪐</span><span class="tile-price">130K</span><div class="star-container"></div></div>
+      <div class="tile"><span class="tile-name">ไอโอ</span><span class="tile-icon">🟡</span><span class="tile-price">140K</span><div class="star-container"></div></div>
+      <div class="tile"><span class="tile-name">ยูโรปา</span><span class="tile-icon">⚪</span><span class="tile-price">150K</span><div class="star-container"></div></div>
 
-      <div class="tile">
-        <span class="tile-name">ไอโอ</span>
-        <span class="tile-icon">🟡</span>
-        <span class="tile-price">140K</span>
-        <div class="star-container"></div>
-      </div>
-
-      <div class="tile owner-p1">
-        <span class="tile-name">ยูโรปา</span>
-        <span class="tile-icon">⚪</span>
-        <span class="tile-price">150K</span>
-        <div class="star-container level-2">
-          <span class="star-3d">★</span><span class="star-3d">★</span>
-        </div>
-      </div>
-
-      <!-- แถวล่างสุด -->
-      <div class="tile">
-        <span class="tile-name">สถานีอวกาศ</span>
-        <span class="tile-icon">🛰️</span>
-        <span class="tile-price">วาป</span>
-      </div>
-
-      <div class="tile">
-        <span class="tile-name">ดาวพลูโต</span>
-        <span class="tile-icon">❄️</span>
-        <span class="tile-price">280K</span>
-        <div class="star-container"></div>
-      </div>
-
-      <div class="tile">
-        <span class="tile-name">ไทรทัน</span>
-        <span class="tile-icon">🔮</span>
-        <span class="tile-price">260K</span>
-        <div class="star-container"></div>
-      </div>
-
-      <div class="tile owner-p2">
-        <span class="tile-name">ดาวเนปจูน</span>
-        <span class="tile-icon">🔵</span>
-        <span class="tile-price">250K</span>
-        <div class="star-container level-1">
-          <span class="star-3d">★</span>
-        </div>
-      </div>
-
-      <div class="tile">
-        <span class="tile-name">หลุมดำ</span>
-        <span class="tile-icon">🕳️</span>
-        <span class="tile-price">ตกเกาะ</span>
-      </div>
-
+      <div class="tile"><span class="tile-name">สถานีอวกาศ</span><span class="tile-icon">🛰️</span><span class="tile-price">วาป</span></div>
+      <div class="tile"><span class="tile-name">ดาวพลูโต</span><span class="tile-icon">❄️</span><span class="tile-price">280K</span><div class="star-container"></div></div>
+      <div class="tile"><span class="tile-name">ไทรทัน</span><span class="tile-icon">🔮</span><span class="tile-price">260K</span><div class="star-container"></div></div>
+      <div class="tile"><span class="tile-name">ดาวเนปจูน</span><span class="tile-icon">🔵</span><span class="tile-price">250K</span><div class="star-container"></div></div>
+      <div class="tile"><span class="tile-name">หลุมดำ</span><span class="tile-icon">🕳️</span><span class="tile-price">ตกเกาะ</span></div>
     </div>
 
-    <!-- แผงแสดงเงินผู้เล่น 2 (นอกกระดาน - ฝั่งขวา) -->
-    <div class="player-sidebar">
-      <div class="player-card p2">
-        <div class="player-avatar">🛸</div>
-        <span class="player-name">นักบิน 2</span>
-        <span class="player-money">232,000 $</span>
-      </div>
-    </div>
-
+    <!-- แผงผู้เล่นฝั่งขวา (P2, P4) -->
+    <div class="player-sidebar" id="sidebar-right"></div>
   </div>
 
+  <script>
+    // ไอคอนที่มีให้เลือกแทนตัวผู้เล่น
+    const availableIcons = ['🚀', '🛸', '👨‍🚀', '👩‍🚀', '👾', '🤖', '🛰️', '☄️'];
+    
+    // สีประจำตัวผู้เล่น 1-4
+    const playerColors = [
+      { border: '#ff4b5c', tagBg: 'rgba(255, 75, 92, 0.2)', tagColor: '#ff4b5c' },
+      { border: '#00d2ff', tagBg: 'rgba(0, 210, 255, 0.2)', tagColor: '#00d2ff' },
+      { border: '#00e676', tagBg: 'rgba(0, 230, 118, 0.2)', tagColor: '#00e676' },
+      { border: '#ffea00', tagBg: 'rgba(255, 234, 0, 0.2)', tagColor: '#ffea00' }
+    ];
+
+    // ข้อมูลผู้เล่นเริ่มต้น (2 คน)
+    let players = [
+      { id: 1, name: 'นักบิน 1', icon: '🚀', money: 500000 },
+      { id: 2, name: 'นักบิน 2', icon: '🛸', money: 500000 }
+    ];
+
+    // ฟังก์ชัน Render รายชื่อผู้เล่นในหน้า Setup
+    function renderSetupPlayers() {
+      const container = document.getElementById('players-container');
+      container.innerHTML = '';
+
+      players.forEach((p, index) => {
+        const color = playerColors[index];
+        
+        // สร้าง HTML ตัวเลือกไอคอน
+        let iconsHtml = availableIcons.map(icon => `
+          <div class="avatar-opt ${p.icon === icon ? 'selected' : ''}" 
+               onclick="selectIcon(${index}, '${icon}')">
+            ${icon}
+          </div>
+        `).join('');
+
+        const card = document.createElement('div');
+        card.className = 'player-input-card';
+        card.style.borderColor = p.icon ? color.border : '#30363d';
+        
+        card.innerHTML = `
+          <span class="player-number-tag" style="background: ${color.tagBg}; color: ${color.tagColor};">
+            P${p.id}
+          </span>
+          <input type="text" class="name-input" value="${p.name}" 
+                 onchange="updateName(${index}, this.value)" placeholder="ชื่อผู้เล่น">
+          <div class="avatar-picker">
+            ${iconsHtml}
+          </div>
+          ${players.length > 2 ? `<button style="background:none; border:none; color:#ff4b5c; cursor:pointer; font-size:1.2rem;" onclick="removePlayer(${index})">✕</button>` : ''}
+        `;
+        container.appendChild(card);
+      });
+
+      // ซ่อนปุ่มเพิ่มถ้าครบ 4 คน
+      document.getElementById('add-player-btn').style.display = players.length >= 4 ? 'none' : 'inline-block';
+    }
+
+    // เลือกรอบไอคอน
+    function selectIcon(playerIndex, icon) {
+      players[playerIndex].icon = icon;
+      renderSetupPlayers();
+    }
+
+    // อัปเดตชื่อผู้เล่น
+    function updateName(playerIndex, name) {
+      players[playerIndex].name = name || `นักบิน ${playerIndex + 1}`;
+    }
+
+    // เพิ่มผู้เล่น (สูงสุด 4 คน)
+    function addPlayer() {
+      if (players.length < 4) {
+        const nextId = players.length + 1;
+        const defaultIcon = availableIcons[nextId - 1] || '🤖';
+        players.push({
+          id: nextId,
+          name: `นักบิน ${nextId}`,
+          icon: defaultIcon,
+          money: 500000
+        });
+        renderSetupPlayers();
+      }
+    }
+
+    // ลบผู้เล่น (ขั้นต่ำ 2 คน)
+    function removePlayer(index) {
+      if (players.length > 2) {
+        players.splice(index, 1);
+        // รีรัน ID ให้เรียง 1-N ใหม่
+        players.forEach((p, i) => p.id = i + 1);
+        renderSetupPlayers();
+      }
+    }
+
+    // กดเริ่มเกม
+    function startGame() {
+      document.getElementById('setup-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display = 'flex';
+
+      const leftSidebar = document.getElementById('sidebar-left');
+      const rightSidebar = document.getElementById('sidebar-right');
+      leftSidebar.innerHTML = '';
+      rightSidebar.innerHTML = '';
+
+      // กระจายผู้เล่นลง Sidebar (P1, P3 ฝั่งซ้าย / P2, P4 ฝั่งขวา)
+      players.forEach((p, index) => {
+        const color = playerColors[index];
+        const playerCardHtml = `
+          <div class="player-card ${index === 0 ? 'active-turn' : ''}" style="border-left: 6px solid ${color.border};">
+            <div class="player-avatar">${p.icon}</div>
+            <span class="player-name">${p.name}</span>
+            <span class="player-money">${p.money.toLocaleString()} $</span>
+          </div>
+        `;
+
+        if (index % 2 === 0) {
+          leftSidebar.innerHTML += playerCardHtml;
+        } else {
+          rightSidebar.innerHTML += playerCardHtml;
+        }
+      });
+
+      // อัปเดตตัวแสดงตาผู้เล่น
+      document.getElementById('current-turn-display').innerHTML = `ตาของ: ${players[0].icon} ${players[0].name}`;
+    }
+
+    // แสดงผลครั้งแรก
+    renderSetupPlayers();
+  </script>
 </body>
 </html>
